@@ -9,6 +9,7 @@ Next Up is a desktop focus companion for people who jump between tasks and lose 
 - Pin the panel for a continuous reminder or expand it to reorder and complete tasks.
 - Switch tasks with a keyboard shortcut and keep the time already spent on each one.
 - Type or dictate a new task and optionally give it a deadline. Deadlines are highlighted during the final three hours.
+- Right-click a task in the expanded list and choose **Set deadline** to edit its title or deadline.
 
 Next Up is built with Rust and Tauri 2 and shares the same Mac-style interface across macOS, Windows, and Linux.
 

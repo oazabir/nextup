@@ -20,10 +20,14 @@ let pinned = false;
 let dragged;
 let recognition;
 let captureCurrent = false;
+let editingTask;
+let menuTask;
+let menuTrigger;
 let shortcutOrder;
 const voice = get('voice');
 const transcript = get('transcript');
 const deadline = get('deadline');
+const taskMenu = get('task-menu');
 const speech = window.SpeechRecognition || window.webkitSpeechRecognition;
 const deadlineSoon = 3 * 60 * 60 * 1000;
 const deadlineFormat = new Intl.DateTimeFormat(undefined, {dateStyle: 'medium', timeStyle: 'short'});
@@ -38,6 +42,7 @@ function appendDeadline(description, task) {
 }
 
 function render() {
+  closeTaskMenu();
   const list = get('tasks');
   const animate = !matchMedia('(prefers-reduced-motion: reduce)').matches;
   const glanceFocus = get('glance-focus');
@@ -119,6 +124,12 @@ function render() {
       };
     }
     row.append(handle, box, description, time);
+    row.oncontextmenu = event => openTaskMenu(event, task, name);
+    row.onkeydown = event => {
+      if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
+        openTaskMenu(event, task, event.target);
+      }
+    };
     box.onchange = () => {
       task.done = box.checked;
       if (task.done && running) stopTask(task);
@@ -365,15 +376,44 @@ function tick() {
   get('countdown').textContent = Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
 }
 
-function openVoice(other) {
+function openTaskMenu(event, task, trigger) {
+  event.preventDefault();
+  menuTask = task;
+  menuTrigger = trigger;
+  taskMenu.hidden = false;
+  const widget = get('widget').getBoundingClientRect();
+  const anchor = trigger.getBoundingClientRect();
+  const x = (event.clientX || anchor.left) - widget.left;
+  const y = (event.clientY || anchor.bottom) - widget.top;
+  taskMenu.style.left = `${Math.max(6, Math.min(x, widget.width - taskMenu.offsetWidth - 6))}px`;
+  taskMenu.style.top = `${Math.max(6, Math.min(y, widget.height - taskMenu.offsetHeight - 6))}px`;
+  get('set-deadline').focus();
+}
+
+function closeTaskMenu(restoreFocus = false) {
+  if (taskMenu.hidden) return;
+  taskMenu.hidden = true;
+  if (restoreFocus) menuTrigger?.focus();
+  menuTask = menuTrigger = undefined;
+}
+
+function deadlineInputValue(timestamp) {
+  if (!Number.isFinite(timestamp)) return '';
+  const local = new Date(timestamp);
+  return new Date(timestamp - local.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
+function openVoice(other, task) {
   if (voice.open) return;
+  closeTaskMenu();
+  editingTask = task;
   captureCurrent = other;
-  voice.setAttribute('aria-label', other ? 'New task' : 'New priorities');
+  voice.setAttribute('aria-label', task ? 'Edit task' : other ? 'New task' : 'New priorities');
   transcript.setAttribute('aria-label', other ? 'Task' : 'Priorities');
   transcript.placeholder = other ? 'What are you working on?' : 'One priority per line';
-  transcript.value = '';
-  deadline.value = '';
-  get('save').disabled = true;
+  transcript.value = task?.name ?? '';
+  deadline.value = deadlineInputValue(task?.deadlineAt);
+  transcript.oninput();
   get('mic').disabled = !speech;
   get('voice-status').textContent = speech ? '' : 'Dictation is unavailable in this browser.';
   show();
@@ -443,7 +483,17 @@ get('close').onclick = dismiss;
 get('pin').onclick = () => setPinned(!pinned);
 get('capture').onclick = get('desktop-capture').onclick = () => openVoice(false);
 get('different').onclick = () => openVoice(true);
+get('set-deadline').onclick = () => openVoice(true, menuTask);
+document.addEventListener('pointerdown', event => {
+  if (!taskMenu.contains(event.target)) closeTaskMenu();
+});
 document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !taskMenu.hidden) {
+    event.preventDefault();
+    closeTaskMenu(true);
+    return;
+  }
+  if (event.key === 'Tab' && !taskMenu.hidden) closeTaskMenu(true);
   if (!event.ctrlKey || !event.altKey || event.metaKey || event.shiftKey || event.isComposing) return;
   const direction = {BracketLeft: -1, BracketRight: 1}[event.code];
   if (event.code !== 'KeyN' && !direction) return;
@@ -477,6 +527,9 @@ voice.onclick = event => {
 get('mic').onclick = toggleMic;
 transcript.oninput = () => { get('save').disabled = !transcript.value.trim(); };
 voice.onclose = () => {
+  const task = editingTask;
+  editingTask = undefined;
+  if (task) findRow(task.id)?.querySelector('.task-text').focus();
   sizeDesktop();
   const session = recognition;
   resetMic();
@@ -487,6 +540,14 @@ get('voice-form').onsubmit = event => {
   const names = (captureCurrent ? [transcript.value] : transcript.value.split(/\n+/)).map(line => line.trim()).filter(Boolean);
   if (!names.length) return;
   const deadlineAt = deadline.value ? new Date(deadline.value).getTime() : null;
+  if (editingTask) {
+    editingTask.name = names[0];
+    if (deadline.value !== deadlineInputValue(editingTask.deadlineAt)) editingTask.deadlineAt = deadlineAt;
+    update();
+    voice.close();
+    get('announcement').textContent = 'Task updated.';
+    return;
+  }
   const added = names.map(name => ({id: crypto.randomUUID(), name, done: false, deadlineAt}));
   const current = currentTask();
   tasks.splice(current ? 1 : 0, 0, ...added);
