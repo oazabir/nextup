@@ -1,0 +1,38 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Next Up",
+  "version": "0.1.0",
+  "identifier": "com.nextup.focus",
+  "build": {
+    "frontendDist": [
+      "../index.html",
+      "../app.js",
+      "../style.css"
+    ]
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "macOSPrivateApi": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Next Up",
+        "width": 420,
+        "height": 180,
+        "visible": false,
+        "decorations": false,
+        "resizable": false,
+        "transparent": true,
+        "shadow": false
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "icon": [
+      "icons/icon.png",
+      "icons/icon.ico",
+      "icons/icon.icns"
+    ]
+  }
+}

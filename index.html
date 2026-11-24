@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Next Up · Focus companion</title>
+<link rel="stylesheet" href="style.css">
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="bar">
+  <div class="brand"><span class="mark" aria-hidden="true">↗</span> Next Up</div>
+  <div class="tools"><span class="timer"><span class="dot"></span> Next check-in <strong id="countdown">5:00</strong></span><button id="show">Show check-in <span aria-hidden="true">↗</span></button></div>
+</header>
+<main>
+  <div class="wallpaper" aria-hidden="true"></div>
+  <section class="intro">
+    <div class="app-icon" aria-hidden="true"><span></span><span></span><span></span></div>
+    <h1>What’s next for you?</h1>
+    <p>Say your priorities out loud. Next Up keeps them close and checks in every five minutes.</p>
+    <button id="capture" class="start"><span aria-hidden="true"></span> Speak your priorities</button>
+  </section>
+  <section class="widget" id="widget" aria-label="Focus check-in">
+    <div class="glance">
+      <button id="glance-focus" class="glance-focus"><span id="glance-description"><strong id="glance-name"></strong></span><span id="glance-time"></span></button>
+      <ul id="glance-next" aria-label="Upcoming priorities"></ul>
+    </div>
+    <header class="widget-top"><div class="checkin"><span class="dot"></span><span id="status">FOCUS CHECK-IN</span></div><div class="window-actions"><button class="icon desktop-capture" id="desktop-capture" aria-label="Add priorities" title="Add priorities">+</button><button class="icon" id="expand" aria-controls="tasks" aria-label="Keep task list expanded" aria-pressed="false" title="Keep task list expanded">⌃</button><button class="icon" id="pin" aria-label="Pin reminder" aria-pressed="false" title="Pin reminder"><span class="pin-glyph" aria-hidden="true"></span></button><button class="icon" id="close" aria-label="Close reminder" title="Close reminder">×</button></div></header>
+    <div class="widget-body">
+      <div class="list-head"><h3 id="focus-question">Which task are you working on?</h3><span id="remaining"></span></div>
+      <ul id="tasks" aria-label="Priorities in order"></ul>
+    </div>
+    <div class="check-question"><button id="different">Something new</button></div>
+  </section>
+</main>
+<dialog id="voice" aria-label="New task">
+  <form id="voice-form">
+    <div class="composer-field">
+      <textarea id="transcript" rows="3" aria-label="Task" placeholder="What are you working on?" autofocus></textarea>
+      <button type="button" id="mic" aria-label="Start dictation" aria-pressed="false" title="Dictate"><span aria-hidden="true" class="mic-glyph"></span></button>
+    </div>
+    <p id="voice-status" role="status"></p>
+    <div class="composer-actions">
+      <label for="deadline"><span class="deadline-label">Deadline <small>(optional)</small></span><input type="datetime-local" id="deadline"></label>
+      <button class="primary save" id="save" disabled>Save</button>
+    </div>
+  </form>
+</dialog>
+<p class="sr" id="announcement" role="status"></p>
+</body>
+</html>
