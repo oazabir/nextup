@@ -220,6 +220,7 @@ function editTask(task, button) {
   button.replaceWith(editor);
   function finish(save, refocus) {
     if (!editor.isConnected) return;
+    editor.onblur = null;
     const name = editor.value.trim();
     if (save && name && name !== task.name) {
       const row = editor.closest('.task');
