@@ -35,7 +35,7 @@ let clockSample;
 let clockRequestPending = false;
 const voice = get('voice');
 const onboarding = get('onboarding');
-const transcript = get('transcript');
+let transcript = get('transcript');
 const deadline = get('deadline');
 const taskMenu = get('task-menu');
 const speech = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -232,9 +232,8 @@ function render() {
 }
 
 function editTask(task, button) {
-  const editor = document.createElement('textarea');
+  const editor = document.createElement('input');
   editor.className = 'task-editor';
-  editor.rows = 2;
   editor.value = task.name;
   editor.setAttribute('aria-label', 'Edit task description');
   button.replaceWith(editor);
@@ -262,7 +261,7 @@ function editTask(task, button) {
   }
   editor.onblur = () => finish(true, false);
   editor.onkeydown = event => {
-    if (event.isComposing || (event.key !== 'Escape' && (event.key !== 'Enter' || event.shiftKey))) return;
+    if (event.isComposing || (event.key !== 'Escape' && event.key !== 'Enter')) return;
     event.preventDefault();
     finish(event.key === 'Enter', true);
   };
@@ -448,8 +447,9 @@ function openVoice(other, task) {
   editingTask = task;
   captureCurrent = other;
   voice.setAttribute('aria-label', task ? 'Edit task' : other ? 'New task' : 'New priorities');
-  transcript.setAttribute('aria-label', other ? 'Task' : 'Priorities');
-  transcript.placeholder = other ? 'What are you working on?' : 'One priority per line';
+  get('transcript').hidden = !other;
+  get('bulk-transcript').hidden = other;
+  transcript = get(other ? 'transcript' : 'bulk-transcript');
   transcript.value = task?.name ?? '';
   deadline.value = deadlineInputValue(task?.deadlineAt);
   transcript.oninput();
@@ -457,6 +457,7 @@ function openVoice(other, task) {
   get('voice-status').textContent = speech ? '' : 'Dictation is unavailable in this browser.';
   show();
   voice.showModal();
+  transcript.focus();
   sizeDesktop();
 }
 
@@ -479,7 +480,7 @@ function toggleMic() {
   session.onresult = event => {
     if (recognition !== session) return;
     const results = Array.from(event.results, result => result[0].transcript.trim());
-    transcript.value = [prefix, ...results].filter(Boolean).join('\n');
+    transcript.value = [prefix, ...results].filter(Boolean).join(captureCurrent ? ' ' : '\n');
     transcript.oninput();
   };
   session.onerror = () => {
@@ -570,7 +571,9 @@ voice.onclick = event => {
       event.clientY < bounds.top || event.clientY > bounds.bottom) voice.close();
 };
 get('mic').onclick = toggleMic;
-transcript.oninput = () => { get('save').disabled = !transcript.value.trim(); };
+get('transcript').oninput = get('bulk-transcript').oninput = () => {
+  get('save').disabled = !transcript.value.trim();
+};
 voice.onclose = () => {
   const task = editingTask;
   editingTask = undefined;

@@ -45,7 +45,8 @@
 <dialog id="voice" aria-label="New task">
   <form id="voice-form">
     <div class="composer-field">
-      <textarea id="transcript" rows="3" aria-label="Task" placeholder="What are you working on?" autofocus></textarea>
+      <input class="transcript" id="transcript" type="text" aria-label="Task" placeholder="What are you working on?">
+      <textarea class="transcript" id="bulk-transcript" rows="3" aria-label="Priorities" placeholder="One priority per line" hidden></textarea>
       <button type="button" id="mic" aria-label="Start dictation" aria-pressed="false" title="Dictate"><span aria-hidden="true" class="mic-glyph"></span></button>
     </div>
     <p id="voice-status" role="status"></p>
