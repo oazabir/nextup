@@ -16,6 +16,7 @@ use tauri::{
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 mod awake_clock;
+mod focus_switch;
 use awake_clock::AwakeClock;
 
 #[tauri::command]
@@ -127,6 +128,9 @@ fn main() {
             }
         })
         .setup(move |app| {
+            if let Some(window) = app.get_webview_window("main") {
+                focus_switch::start(window);
+            }
             if has_global_shortcuts {
                 for shortcut in [previous, next, compose] {
                     if let Err(error) = app.global_shortcut().register(shortcut) {

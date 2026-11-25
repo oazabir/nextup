@@ -656,6 +656,18 @@ function sizeDesktop() {
   return native('resize_widget', { height: height + 24 });
 }
 
+let focusPulseTimeout;
+window.addEventListener('desktop-focus-switch', () => {
+  const widget = get('widget');
+  if (!currentTask() || voice.open || onboarding.open || widget.classList.contains('closed')) return;
+
+  widget.classList.remove('focus-pulse');
+  void widget.offsetWidth;
+  widget.classList.add('focus-pulse');
+  clearTimeout(focusPulseTimeout);
+  focusPulseTimeout = setTimeout(() => widget.classList.remove('focus-pulse'), 950);
+});
+
 if (desktop) {
   window.addEventListener('desktop-show', () => show(true));
   const observer = new ResizeObserver(sizeDesktop);

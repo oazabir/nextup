@@ -38,3 +38,9 @@ The same three frontend files can also be served with `python3 -m http.server 87
 - Tauri's transparent macOS window support requires private APIs, which rules out Mac App Store distribution for this configuration.
 - Ctrl+Alt/Option+[ and ] switch tasks. Ctrl+Alt/Option+N opens the composer. Global registration relies on the Tauri shortcut plugin and uses X11 on Linux. Focused shortcuts are available as a fallback.
 - The microphone uses the webview's speech recognition API when exposed. Typing works without speech recognition. Parakeet V3 is not bundled.
+
+## Focus reminders on window and tab switches
+
+While a task is running, Next Up briefly highlights it when you switch windows. The reminder keeps keyboard focus in your current app. Keep Always on Top enabled if you want to see the pulse over other windows. Window detection works on macOS, Windows, and X11 desktops with `xprop` installed. Native Wayland windows are outside the X11 monitor's view.
+
+To include browser tab switches in Chrome, Edge, or another Chromium browser, open its Extensions page, enable **Developer mode**, click **Load unpacked**, and select the `browser-extension` directory from this repository. With Next Up running, switch tabs in the focused browser window to see the pulse. The extension sends a single signal over loopback and shares no URLs, tab titles, or browsing history.
