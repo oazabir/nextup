@@ -24,7 +24,6 @@ try {
 let next = Date.now() + interval;
 let pinned = true;
 try { pinned = localStorage.getItem(alwaysOnTopKey) !== 'false'; } catch {}
-let dragged;
 let recognition;
 let captureCurrent = false;
 let editingTask;
@@ -99,8 +98,9 @@ function render() {
     handle.className = 'drag-handle';
     handle.textContent = '⠿';
     handle.setAttribute('aria-hidden', 'true');
-    handle.draggable = !task.done && !running;
-    handle.title = handle.draggable ? 'Drag to reorder' : running ? 'In-progress task stays first' : 'Completed task';
+    const reorderable = !task.done && !running;
+    handle.classList.toggle('reorderable', reorderable);
+    handle.title = reorderable ? 'Drag to reorder' : running ? 'In-progress task stays first' : 'Completed task';
     const box = document.createElement('input');
     box.type = 'checkbox';
     box.checked = task.done;
@@ -166,34 +166,7 @@ function render() {
       findRow(task.id)?.querySelector('.task-playback').focus();
     };
     row.append(playback);
-    row.ondragstart = event => {
-      if (event.target !== handle || !handle.draggable) {
-        event.preventDefault();
-        return;
-      }
-      dragged = task.id;
-      row.classList.add('dragging');
-      event.dataTransfer.setData('text/plain', task.id);
-      event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setDragImage(row, 18, row.offsetHeight / 2);
-    };
-    row.ondragend = () => {
-      dragged = undefined;
-      row.classList.remove('dragging');
-      list.querySelector('.over')?.classList.remove('over');
-    };
-    row.ondragover = event => {
-      if (!dragged || dragged === task.id || running) return;
-      event.preventDefault();
-      row.classList.add('over');
-    };
-    row.ondragleave = () => row.classList.remove('over');
-    row.ondrop = event => {
-      event.preventDefault();
-      row.classList.remove('over');
-      if (dragged && dragged !== task.id) reorder(dragged, task.id);
-      dragged = undefined;
-    };
+    if (reorderable) enableTaskDrag(handle, row, list);
     return row;
   });
   if (!rows.length) {
@@ -349,6 +322,38 @@ function update() {
 
 function persist() {
   try { localStorage.setItem(storageKey, JSON.stringify(tasks)); } catch {}
+}
+
+function enableTaskDrag(handle, row, list) {
+  let origin;
+  let target;
+  handle.onpointerdown = event => {
+    if (event.button !== 0 || !event.isPrimary) return;
+    event.preventDefault();
+    handle.setPointerCapture(event.pointerId);
+    origin = {x: event.clientX, y: event.clientY};
+  };
+  handle.onpointermove = event => {
+    if (!origin || !handle.hasPointerCapture(event.pointerId)) return;
+    if (!row.classList.contains('dragging') &&
+        Math.hypot(event.clientX - origin.x, event.clientY - origin.y) < 4) return;
+    row.classList.add('dragging');
+    const hit = document.elementFromPoint(event.clientX, event.clientY)?.closest('.task');
+    const next = hit && hit !== row && list.contains(hit) && !hit.matches('.running, .done') ? hit : null;
+    if (next === target) return;
+    target?.classList.remove('over');
+    target = next;
+    target?.classList.add('over');
+  };
+  handle.onpointerup = event => {
+    if (handle.hasPointerCapture(event.pointerId) && target) reorder(row.dataset.id, target.dataset.id);
+  };
+  handle.onlostpointercapture = () => {
+    origin = undefined;
+    row.classList.remove('dragging');
+    target?.classList.remove('over');
+    target = undefined;
+  };
 }
 
 function reorder(fromId, toId) {
