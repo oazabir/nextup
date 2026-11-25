@@ -95,6 +95,7 @@ fn main() {
     clock.start();
     let mut builder = tauri::Builder::default()
         .manage(Arc::new(AtomicU64::new(0)))
+        .manage(focus_switch::BrowserPreference::default())
         .manage(clock);
     if has_global_shortcuts {
         builder = builder.plugin(
@@ -139,17 +140,23 @@ fn main() {
                 }
             }
             let show = MenuItem::with_id(app, "show", "Show Next Up", true, None::<&str>)?;
+            let browser = MenuItem::with_id(app, "browser", "Work Browser…", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit Next Up", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&show, &quit])?;
+            let menu = Menu::with_items(app, &[&show, &browser, &quit])?;
             let mut tray = TrayIconBuilder::new()
                 .menu(&menu)
                 .tooltip("Next Up")
                 .on_menu_event(|app, event| match event.id().as_ref() {
-                    "show" => {
+                    "show" | "browser" => {
                         if let Some(window) = app.get_webview_window("main") {
                             let _ = show_widget(window.clone());
                             let _ = window.set_focus();
-                            let _ = window.eval("window.dispatchEvent(new Event('desktop-show'))");
+                            let script = if event.id().as_ref() == "browser" {
+                                "window.dispatchEvent(new Event('desktop-show')); window.dispatchEvent(new Event('desktop-browser-setup'))"
+                            } else {
+                                "window.dispatchEvent(new Event('desktop-show'))"
+                            };
+                            let _ = window.eval(script);
                         }
                     }
                     "quit" => app.exit(0),
@@ -169,6 +176,7 @@ fn main() {
             hide_widget,
             pin_widget,
             awake_millis,
+            focus_switch::set_work_browser,
             schedule_checkin
         ])
         .run(tauri::generate_context!())

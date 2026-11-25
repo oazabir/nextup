@@ -6,15 +6,40 @@ use std::{
     time::{Duration, Instant},
 };
 
+#[cfg(target_os = "macos")]
+use tauri::Manager;
 use tauri::WebviewWindow;
 
 #[cfg(target_os = "macos")]
-mod chrome;
+mod browser;
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum WorkBrowser {
+    Chrome,
+    Safari,
+}
+
+#[derive(Clone, Default)]
+pub struct BrowserPreference(Arc<Mutex<Option<WorkBrowser>>>);
+
+#[tauri::command]
+pub fn set_work_browser(browser: &str, preference: tauri::State<'_, BrowserPreference>) {
+    let selected = match browser {
+        "chrome" => Some(WorkBrowser::Chrome),
+        "safari" => Some(WorkBrowser::Safari),
+        _ => None,
+    };
+    if let Ok(mut current) = preference.0.lock() {
+        *current = selected;
+    }
+}
 
 const PORT: u16 = 43817;
 type Notify = Arc<dyn Fn() + Send + Sync>;
 
 pub fn start(window: WebviewWindow) {
+    #[cfg(target_os = "macos")]
+    let preference = window.state::<BrowserPreference>().inner().clone();
     let last_pulse = Mutex::new(None::<Instant>);
     let notify: Notify = Arc::new(move || {
         let Ok(mut last) = last_pulse.lock() else {
@@ -45,8 +70,8 @@ pub fn start(window: WebviewWindow) {
     );
     #[cfg(target_os = "macos")]
     {
-        let chrome_notify = Arc::clone(&notify);
-        thread::spawn(move || chrome::watch(chrome_notify));
+        let browser_notify = Arc::clone(&notify);
+        thread::spawn(move || browser::watch(browser_notify, preference));
     }
     thread::spawn(move || watch_windows(notify));
 }

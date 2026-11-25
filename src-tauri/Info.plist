@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
   <key>NSAppleEventsUsageDescription</key>
-  <string>Next Up checks which Chrome tab is active to remind you of your current task when you switch tabs.</string>
+  <string>Next Up checks which tab is active in your chosen browser to remind you of your current task when you switch tabs.</string>
   <key>NSMicrophoneUsageDescription</key>
   <string>Next Up uses your microphone when you dictate a task.</string>
   <key>NSSpeechRecognitionUsageDescription</key>

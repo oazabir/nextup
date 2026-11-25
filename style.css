@@ -429,6 +429,11 @@ html.desktop, .desktop body { background: transparent; overflow: hidden; }
 #onboarding-tasks input[type=text] { flex-basis: 100%; }
 #onboarding-tasks input[type=datetime-local] { margin-left: auto; }
 #onboarding button { display: block; margin-left: auto; }
+#browser-form label { display: block; margin: 16px 0 6px; font-size: 12px; font-weight: 650; }
+#work-browser { width: 100%; padding: 9px; border: 1px solid var(--line); border-radius: 8px; background: #ffffffad; color: var(--ink); font: inherit; }
+#browser-help:not(:empty) { margin-top: 10px; }
+.onboarding-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+#onboarding .onboarding-actions button { margin: 0; }
 .desktop #voice { max-height: none; background: #edf3ffb8; }
 .desktop #voice::backdrop { background: transparent; backdrop-filter: none; }
 html:not(.desktop) .desktop-capture { display: none; }

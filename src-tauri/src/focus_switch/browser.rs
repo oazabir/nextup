@@ -3,25 +3,40 @@ use std::{process::Command, thread, time::Duration};
 use objc2::rc::autoreleasepool;
 use objc2_app_kit::NSWorkspace;
 
-use super::Notify;
+use super::{BrowserPreference, Notify, WorkBrowser};
 
-const CHROME: &str = "com.google.Chrome";
 const ACTIVE_TAB: &str = r#"
-tell application "__CHROME_PATH__"
+tell application "__BROWSER_PATH__"
     with timeout of 2 seconds
         if not running then return ""
         if (count of windows) is 0 then return ""
-        set chromeWindow to front window
-        return ((id of chromeWindow) as text) & ":" & ((id of active tab of chromeWindow) as text)
+        set browserWindow to front window
+        return ((id of browserWindow) as text) & ":" & ((__TAB__ of browserWindow) as text)
     end timeout
 end tell
 "#;
 
-fn foreground_chrome() -> Option<(i32, String)> {
+impl WorkBrowser {
+    fn bundle_id(self) -> &'static str {
+        match self {
+            Self::Chrome => "com.google.Chrome",
+            Self::Safari => "com.apple.Safari",
+        }
+    }
+
+    fn tab_expression(self) -> &'static str {
+        match self {
+            Self::Chrome => "id of active tab",
+            Self::Safari => "index of current tab",
+        }
+    }
+}
+
+fn foreground_browser(browser: WorkBrowser) -> Option<(i32, String)> {
     autoreleasepool(|_| {
         let app = NSWorkspace::sharedWorkspace().frontmostApplication()?;
         let bundle = app.bundleIdentifier()?;
-        if bundle.to_string() != CHROME {
+        if bundle.to_string() != browser.bundle_id() {
             return None;
         }
         Some((
@@ -56,20 +71,27 @@ impl Tab {
     }
 }
 
-pub(super) fn watch(notify: Notify) {
+pub(super) fn watch(notify: Notify, preference: BrowserPreference) {
     let mut previous = None;
     loop {
         let mut current = None;
         let mut wait = Duration::from_millis(650);
-        if let Some((pid, path)) = foreground_chrome() {
+        let browser = preference.0.lock().ok().and_then(|guard| *guard);
+        if let Some((browser, (pid, path))) =
+            browser.and_then(|browser| foreground_browser(browser).map(|app| (browser, app)))
+        {
             let path = path.replace('\\', "\\\\").replace('"', "\\\"");
-            let script = ACTIVE_TAB.replace("__CHROME_PATH__", &path);
+            let script = ACTIVE_TAB
+                .replace("__TAB__", browser.tab_expression())
+                .replace("__BROWSER_PATH__", &path);
             match Command::new("/usr/bin/osascript")
                 .args(["-e", &script])
                 .output()
             {
                 Ok(result) if result.status.success() => {
-                    if foreground_chrome().is_some_and(|(current_pid, _)| current_pid == pid) {
+                    if foreground_browser(browser)
+                        .is_some_and(|(current_pid, _)| current_pid == pid)
+                    {
                         current = Tab::parse(pid, &result.stdout);
                     }
                 }
