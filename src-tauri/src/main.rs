@@ -28,10 +28,9 @@ fn place_widget(window: &WebviewWindow) -> tauri::Result<()> {
         let area = monitor.work_area();
         let size = window.outer_size()?;
         let inset = (16.0 * monitor.scale_factor()).round() as i32;
-        let x = (area.size.width as i32 - size.width as i32 - inset).max(0);
         let y = (area.size.height as i32 - size.height as i32 - inset).max(0);
         window.set_position(PhysicalPosition::new(
-            area.position.x + x,
+            area.position.x + inset,
             area.position.y + y,
         ))?;
     }

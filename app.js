@@ -378,6 +378,7 @@ function setPinned(value) {
   pinned = value;
   get('pin').setAttribute('aria-pressed', String(value));
   get('pin').setAttribute('aria-label', value ? 'Unpin reminder' : 'Pin reminder');
+  get('pin').title = value ? 'Turn off Always on Top' : 'Keep Next Up always on top';
   get('status').textContent = value ? 'PINNED' : 'FOCUS CHECK-IN';
   native('pin_widget', { pinned: value });
 }
