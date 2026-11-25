@@ -426,6 +426,12 @@ function checkIn(now = Date.now()) {
   next = now + interval;
   if (voice.open || onboarding.open) return;
   show();
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    get('widget').animate(
+      [0, -7, 7, -6, 5, -3, 2, 0].map(x => ({translate: `${x}px 0`})),
+      {duration: 620, easing: 'ease-out'}
+    );
+  }
   const first = tasks.find(task => !task.done);
   if (first) pulseTask(first);
   get('announcement').textContent = 'Time for a focus check-in.';

@@ -47,4 +47,4 @@ On macOS, Next Up detects tab switches in Google Chrome through Apple Events. Wh
 
 For Edge and other Chromium browsers, or Chrome on Windows and Linux, open the browser's Extensions page, enable **Developer mode**, click **Load unpacked**, and select the `browser-extension` directory. The extension sends a single signal over loopback and shares no URLs, tab titles, or browsing history.
 
-Every five minutes, the first unfinished task flashes, even if its timer is paused.
+Every five minutes, the floating window shakes and the first unfinished task flashes, even if its timer is paused. With Reduce Motion enabled, the task gets a stationary highlight.
