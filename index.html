@@ -34,6 +34,14 @@
     <div id="task-menu" hidden><button type="button" id="set-deadline">Set deadline</button></div>
   </section>
 </main>
+<dialog id="onboarding" aria-labelledby="onboarding-title">
+  <form id="onboarding-form">
+    <h2 id="onboarding-title">What’s next for you?</h2>
+    <p>Add your next three priorities in the order you want to tackle them.</p>
+    <ol id="onboarding-tasks"></ol>
+    <button class="primary" type="submit">Start first task</button>
+  </form>
+</dialog>
 <dialog id="voice" aria-label="New task">
   <form id="voice-form">
     <div class="composer-field">

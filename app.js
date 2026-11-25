@@ -8,12 +8,17 @@ if (desktop) document.documentElement.classList.add('desktop');
 const get = id => document.getElementById(id);
 const interval = 300000;
 const storageKey = 'next-up-priorities-v1';
-let tasks = ['Finish the project outline', 'Reply to the design feedback', 'Book Friday’s review'].map((name, index) => ({id: String(index), name, done: false}));
-tasks[0].startedAt = Date.now();
+let tasks = [];
+let needsOnboarding = true;
 try {
   const saved = localStorage.getItem(storageKey);
-  if (saved) tasks = JSON.parse(saved);
-  else persist();
+  if (saved) {
+    const storedTasks = JSON.parse(saved);
+    if (Array.isArray(storedTasks)) {
+      tasks = storedTasks;
+      needsOnboarding = false;
+    }
+  }
 } catch {}
 let next = Date.now() + interval;
 let pinned = false;
@@ -25,6 +30,7 @@ let menuTask;
 let menuTrigger;
 let shortcutOrder;
 const voice = get('voice');
+const onboarding = get('onboarding');
 const transcript = get('transcript');
 const deadline = get('deadline');
 const taskMenu = get('task-menu');
@@ -404,7 +410,7 @@ function deadlineInputValue(timestamp) {
 }
 
 function openVoice(other, task) {
-  if (voice.open) return;
+  if (voice.open || onboarding.open) return;
   closeTaskMenu();
   editingTask = task;
   captureCurrent = other;
@@ -504,7 +510,7 @@ document.addEventListener('keydown', event => {
 window.addEventListener('desktop-shortcut', event => useShortcut(event.detail));
 
 function useShortcut(direction) {
-  if (voice.open) return;
+  if (voice.open || onboarding.open) return;
   if (!direction) {
     openVoice(true);
     return;
@@ -558,6 +564,38 @@ get('voice-form').onsubmit = event => {
   get('announcement').textContent = names.length + ' priorities added.';
 };
 
+if (needsOnboarding) {
+  const fields = Array.from({length: 3}, (_, index) => {
+    const row = document.createElement('li');
+    row.innerHTML = `<label>Task ${index + 1}<input type="text" name="task" required></label>
+      <label>Deadline <small>(optional)</small><input type="datetime-local" name="deadline"></label>`;
+    get('onboarding-tasks').append(row);
+    const title = row.querySelector('[name=task]');
+    title.oninput = () => title.setCustomValidity('');
+    return {title, due: row.querySelector('[name=deadline]')};
+  });
+  onboarding.oncancel = event => event.preventDefault();
+  get('onboarding-form').onsubmit = event => {
+    event.preventDefault();
+    for (const {title} of fields) {
+      if (title.value.trim()) continue;
+      title.setCustomValidity('Enter a task title.');
+      title.reportValidity();
+      return;
+    }
+    tasks = fields.map(({title, due}) => ({
+      id: crypto.randomUUID(), name: title.value.trim(), done: false,
+      deadlineAt: due.value ? new Date(due.value).getTime() : null
+    }));
+    onboarding.close();
+    startTask(tasks[0]);
+    next = Date.now() + interval;
+    sizeDesktop();
+    native('schedule_checkin');
+  };
+  onboarding.showModal();
+}
+
 render();
 tick();
 setInterval(tick, 1000);
@@ -565,7 +603,8 @@ setInterval(tick, 1000);
 function sizeDesktop() {
   if (!desktop) return;
   const widget = get('widget');
-  const height = voice.open ? Math.max(widget.offsetHeight, voice.offsetHeight + 12) : widget.offsetHeight;
+  const dialog = onboarding.open ? onboarding : voice;
+  const height = dialog.open ? Math.max(widget.offsetHeight, dialog.scrollHeight + 12) : widget.offsetHeight;
   return native('resize_widget', { height: height + 24 });
 }
 
@@ -574,11 +613,12 @@ if (desktop) {
   const observer = new ResizeObserver(sizeDesktop);
   observer.observe(get('widget'));
   observer.observe(voice);
+  observer.observe(onboarding);
   window.addEventListener('desktop-checkin', () => {
     next = Date.now() + interval;
     show();
     get('announcement').textContent = 'Time for a focus check-in.';
   });
   sizeDesktop()?.then(() => native('show_widget'));
-  native('schedule_checkin');
+  if (!onboarding.open) native('schedule_checkin');
 }

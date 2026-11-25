@@ -6,6 +6,7 @@
 
 Next Up is a desktop focus companion for people who jump between tasks and lose track of what they meant to do next. The floating panel keeps your current priority and timer in sight, and a five-minute check-in gives you a chance to return to it or deliberately switch. For people with ADHD and anyone who finds it hard to hold several priorities in mind, the panel provides a visible place to pick up again after an interruption.
 
+- On first launch, enter your next three tasks and optionally set a deadline for each. Next Up starts tracking your first priority when you save.
 - Pin the panel for a continuous reminder or expand it to reorder and complete tasks.
 - Switch tasks with a keyboard shortcut and keep the time already spent on each one.
 - Type or dictate a new task and optionally give it a deadline. Deadlines are highlighted during the final three hours.
