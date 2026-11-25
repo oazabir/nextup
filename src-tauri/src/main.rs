@@ -67,11 +67,18 @@ fn pin_widget(window: WebviewWindow, pinned: bool) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn schedule_checkin(window: WebviewWindow, generation: tauri::State<'_, Arc<AtomicU64>>) {
+fn schedule_checkin(
+    window: WebviewWindow,
+    generation: tauri::State<'_, Arc<AtomicU64>>,
+    seconds: u64,
+) {
     let generation = Arc::clone(generation.inner());
     let ticket = generation.fetch_add(1, Ordering::Relaxed) + 1;
+    if seconds == 0 {
+        return;
+    }
     std::thread::spawn(move || loop {
-        std::thread::sleep(Duration::from_secs(300));
+        std::thread::sleep(Duration::from_secs(seconds.clamp(60, 3600)));
         if generation.load(Ordering::Relaxed) != ticket {
             break;
         }
@@ -141,16 +148,22 @@ fn main() {
             }
             let show = MenuItem::with_id(app, "show", "Show Next Up", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit Next Up", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&show, &quit])?;
+            let settings = MenuItem::with_id(app, "settings", "Settings…", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show, &settings, &quit])?;
             let mut tray = TrayIconBuilder::new()
                 .menu(&menu)
                 .tooltip("Next Up")
                 .on_menu_event(|app, event| match event.id().as_ref() {
-                    "show" => {
+                    "show" | "settings" => {
                         if let Some(window) = app.get_webview_window("main") {
                             let _ = show_widget(window.clone());
                             let _ = window.set_focus();
-                            let _ = window.eval("window.dispatchEvent(new Event('desktop-show'))");
+                            let script = if event.id().as_ref() == "settings" {
+                                "window.dispatchEvent(new Event('desktop-show')); window.dispatchEvent(new Event('desktop-settings'))"
+                            } else {
+                                "window.dispatchEvent(new Event('desktop-show'))"
+                            };
+                            let _ = window.eval(script);
                         }
                     }
                     "quit" => app.exit(0),

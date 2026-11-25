@@ -6,7 +6,15 @@ if (desktop) document.documentElement.classList.add('desktop');
 
 'use strict';
 const get = id => document.getElementById(id);
-const interval = 300000;
+const preferencesKey = 'next-up-reminders';
+const preferences = {minutes: 5, shake: false, focusSwitch: true};
+try {
+  const stored = JSON.parse(localStorage.getItem(preferencesKey));
+  if ([0, 1, 3, 5, 10, 15, 30, 60].includes(stored?.minutes)) preferences.minutes = stored.minutes;
+  if (typeof stored?.shake === 'boolean') preferences.shake = stored.shake;
+  if (typeof stored?.focusSwitch === 'boolean') preferences.focusSwitch = stored.focusSwitch;
+} catch {}
+const interval = () => preferences.minutes * 60000;
 const storageKey = 'next-up-priorities-v1';
 const browserKey = 'next-up-work-browser';
 const macDesktop = desktop && /Mac/.test(navigator.platform);
@@ -21,7 +29,7 @@ try {
   }
 } catch {}
 try { workBrowser = localStorage.getItem(browserKey); } catch {}
-let next = Date.now() + interval;
+let next = Date.now() + interval();
 let pinned = true;
 try { pinned = localStorage.getItem(alwaysOnTopKey) !== 'false'; } catch {}
 let recognition;
@@ -33,6 +41,7 @@ let shortcutOrder;
 let clockSample;
 let clockRequestPending = false;
 const voice = get('voice');
+const settings = get('settings');
 let transcript = get('transcript');
 const deadline = get('deadline');
 const taskMenu = get('task-menu');
@@ -381,6 +390,7 @@ function expandFromGlance() {
 
 function setPinned(value) {
   pinned = value;
+  get('settings-pin').checked = value;
   get('pin').setAttribute('aria-pressed', String(value));
   return native('pin_widget', { pinned: value });
 }
@@ -400,9 +410,7 @@ function dismiss() {
   get('widget').inert = true;
   if (desktop) nativeHideTimer = setTimeout(() => native('hide_widget'), 380);
   else get('show').focus();
-  next = Date.now() + interval;
-  native('schedule_checkin');
-  tick();
+  scheduleCheckIn();
 }
 
 let focusPulseTimeout;
@@ -422,17 +430,20 @@ function pulseTask(task) {
 }
 
 function checkIn(now = Date.now()) {
-  next = now + interval;
-  if (voice.open) return;
+  if (!preferences.minutes) return;
+  next = now + interval();
+  if (voice.open || settings.open) return;
   show();
-  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    get('widget').animate(
+  const widget = get('widget');
+  if (preferences.shake && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    widget.animate(
       [0, -7, 7, -6, 5, -3, 2, 0].map(x => ({translate: `${x}px 0`})),
       {duration: 620, easing: 'ease-out'}
     );
   }
-  const first = tasks.find(task => !task.done);
-  if (first) pulseTask(first);
+  widget.classList.remove('checkin-flash');
+  void widget.offsetWidth;
+  widget.classList.add('checkin-flash');
   get('announcement').textContent = 'Time for a focus check-in.';
 }
 
@@ -440,9 +451,9 @@ function tick() {
   const now = Date.now();
   sampleTrackingClock();
   updateTimes(now);
-  if (!desktop && now >= next) checkIn(now);
+  if (!desktop && preferences.minutes && now >= next) checkIn(now);
   const seconds = Math.max(0, Math.ceil((next - now) / 1000));
-  get('countdown').textContent = Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
+  get('countdown').textContent = preferences.minutes ? Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0') : 'Off';
 }
 
 function openTaskMenu(event, task, trigger) {
@@ -473,7 +484,7 @@ function deadlineInputValue(timestamp) {
 }
 
 function openVoice(other, task) {
-  if (voice.open) return;
+  if (voice.open || settings.open) return;
   closeTaskMenu();
   editingTask = task;
   captureCurrent = other;
@@ -551,12 +562,53 @@ get('expand').onclick = event => {
   button.setAttribute('aria-pressed', String(button.getAttribute('aria-pressed') !== 'true'));
 };
 get('close').onclick = dismiss;
-get('pin').onclick = () => {
-  setPinned(!pinned);
+function changePin(value) {
+  setPinned(value);
   try { localStorage.setItem(alwaysOnTopKey, String(pinned)); } catch {}
+}
+get('pin').onclick = () => changePin(!pinned);
+get('settings-pin').onchange = event => changePin(event.target.checked);
+get('checkin-minutes').value = preferences.minutes;
+get('settings-shake').checked = preferences.shake;
+get('settings-switch').checked = preferences.focusSwitch;
+function saveReminders() {
+  try { localStorage.setItem(preferencesKey, JSON.stringify(preferences)); } catch {}
+}
+function scheduleCheckIn() {
+  next = Date.now() + interval();
+  get('settings-shake').disabled = !preferences.minutes;
+  native('schedule_checkin', {seconds: interval() / 1000});
+  tick();
+}
+get('checkin-minutes').onchange = event => {
+  preferences.minutes = Number(event.target.value);
+  saveReminders();
+  scheduleCheckIn();
 };
+get('settings-shake').onchange = event => {
+  preferences.shake = event.target.checked;
+  saveReminders();
+};
+function syncBrowserPreference() {
+  if (macDesktop && workBrowser != null) {
+    native('set_work_browser', {browser: preferences.focusSwitch ? workBrowser : 'skipped'});
+  }
+}
+get('settings-switch').onchange = event => {
+  preferences.focusSwitch = event.target.checked;
+  saveReminders();
+  syncBrowserPreference();
+};
+function openSettings() {
+  if (settings.open || voice.open) return;
+  settings.showModal();
+  sizeDesktop();
+}
+get('open-settings').onclick = openSettings;
+window.addEventListener('desktop-settings', openSettings);
+settings.addEventListener('close', sizeDesktop);
 window.addEventListener(desktop ? 'desktop-blur' : 'blur', () => {
-  if (!voice.open) collapse();
+  if (!voice.open && !settings.open) collapse();
 });
 get('capture').onclick = get('desktop-capture').onclick = () => openVoice(false);
 get('different').onclick = () => openVoice(true);
@@ -581,7 +633,7 @@ document.addEventListener('keydown', event => {
 window.addEventListener('desktop-shortcut', event => useShortcut(event.detail));
 
 function useShortcut(direction) {
-  if (voice.open) return;
+  if (voice.open || settings.open) return;
   if (!direction) {
     openVoice(true);
     return;
@@ -645,26 +697,26 @@ const initialPin = setPinned(pinned);
 function sizeDesktop() {
   if (!desktop) return;
   const widget = get('widget');
-  const height = voice.open ? Math.max(widget.offsetHeight, voice.scrollHeight + 12) : widget.offsetHeight;
+  const dialog = settings.open ? settings : voice;
+  const height = dialog.open ? Math.max(widget.offsetHeight, Math.max(dialog.offsetHeight, dialog.scrollHeight) + 12) : widget.offsetHeight;
   return native('resize_widget', { height: height + 24 });
 }
 
 window.addEventListener('desktop-focus-switch', () => {
   const task = currentTask();
-  if (task && !voice.open && !get('widget').classList.contains('closed')) {
+  if (preferences.focusSwitch && task && !settings.open && !voice.open && !get('widget').classList.contains('closed')) {
     pulseTask(task);
   }
 });
 
 if (desktop) {
-  if (macDesktop && workBrowser != null) {
-    native('set_work_browser', { browser: workBrowser });
-  }
+  syncBrowserPreference();
   window.addEventListener('desktop-show', () => show(true));
   const observer = new ResizeObserver(sizeDesktop);
   observer.observe(get('widget'));
   observer.observe(voice);
+  observer.observe(settings);
   window.addEventListener('desktop-checkin', () => checkIn());
   Promise.all([initialPin, sizeDesktop()]).then(() => native('show_widget'));
-  native('schedule_checkin');
 }
+scheduleCheckIn();

@@ -43,4 +43,4 @@ The same three frontend files can also be served with `python3 -m http.server 87
 
 While a task is running, Next Up briefly highlights it when you switch windows. The reminder keeps keyboard focus in your current app. Keep Always on Top enabled if you want to see the pulse over other windows. Window detection works on macOS, Windows, and X11 desktops with `xprop` installed. Native Wayland windows are outside the X11 monitor's view.
 
-Every five minutes, the floating window shakes and the first unfinished task flashes, even if its timer is paused. With Reduce Motion enabled, the task gets a stationary highlight.
+The entire floating window flashes every five minutes by default. Open **Settings** from the expanded widget or the tray menu to change or turn off timed flashes, enable a shake, toggle window-switch highlights, or change Always on Top. With Reduce Motion enabled, the timed reminder uses a steady tint.

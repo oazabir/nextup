@@ -17,7 +17,7 @@
   <section class="intro">
     <div class="app-icon" aria-hidden="true"><span></span><span></span><span></span></div>
     <h1>What’s next for you?</h1>
-    <p>Say your priorities out loud. Next Up keeps them close and checks in every five minutes.</p>
+    <p>Say your priorities out loud. Next Up keeps them close and checks in at your chosen interval.</p>
     <button id="capture" class="start"><span aria-hidden="true"></span> Speak your priorities</button>
   </section>
   <section class="widget" id="widget" aria-label="Focus check-in">
@@ -25,7 +25,7 @@
       <button id="glance-focus" class="glance-focus"><span id="glance-description"><strong id="glance-name"></strong></span><span id="glance-time"></span></button>
       <ul id="glance-next" aria-label="Upcoming priorities"></ul>
     </div>
-    <header class="widget-top"><div class="checkin"><span class="dot"></span><span id="status">FOCUS CHECK-IN</span></div><div class="window-actions"><button class="icon desktop-capture" id="desktop-capture" aria-label="Add priorities" title="Add priorities">+</button><button class="icon" id="expand" aria-controls="tasks" aria-label="Keep task list expanded" aria-pressed="false" title="Keep task list expanded">⌃</button><button class="icon" id="pin" aria-label="Always on Top" aria-pressed="true" title="Always on Top"><span class="pin-glyph" aria-hidden="true"></span></button><button class="icon" id="close" aria-label="Close reminder" title="Close reminder">×</button></div></header>
+    <header class="widget-top"><div class="checkin"><span class="dot"></span><span id="status">FOCUS CHECK-IN</span></div><div class="window-actions"><button class="icon desktop-capture" id="desktop-capture" aria-label="Add priorities" title="Add priorities">+</button><button class="icon" id="expand" aria-controls="tasks" aria-label="Keep task list expanded" aria-pressed="false" title="Keep task list expanded">⌃</button><button class="icon" id="open-settings" aria-label="Settings" title="Settings">⚙</button><button class="icon" id="pin" aria-label="Always on Top" aria-pressed="true" title="Always on Top"><span class="pin-glyph" aria-hidden="true"></span></button><button class="icon" id="close" aria-label="Close reminder" title="Close reminder">×</button></div></header>
     <div class="widget-body">
       <div class="list-head"><h3 id="focus-question">Which task are you working on?</h3><span id="remaining"></span></div>
       <ul id="tasks" aria-label="Priorities in order"></ul>
@@ -34,6 +34,24 @@
     <div id="task-menu" hidden><button type="button" id="set-deadline">Set deadline</button></div>
   </section>
 </main>
+<dialog id="settings" aria-labelledby="settings-title">
+  <header><h2 id="settings-title">Settings</h2><form method="dialog"><button class="icon" aria-label="Close settings">×</button></form></header>
+  <label>Always on Top <input id="settings-pin" type="checkbox"></label>
+  <label>Flash floating window
+    <select id="checkin-minutes">
+      <option value="0">Off</option>
+      <option value="1">Every minute</option>
+      <option value="3">Every 3 minutes</option>
+      <option value="5">Every 5 minutes</option>
+      <option value="10">Every 10 minutes</option>
+      <option value="15">Every 15 minutes</option>
+      <option value="30">Every 30 minutes</option>
+      <option value="60">Every hour</option>
+    </select>
+  </label>
+  <label>Shake during check-in <input id="settings-shake" type="checkbox"></label>
+  <label>Highlight task on window switch <input id="settings-switch" type="checkbox"></label>
+</dialog>
 <dialog id="voice" aria-label="New task">
   <form id="voice-form">
     <div class="composer-field">
