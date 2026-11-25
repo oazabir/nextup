@@ -21,6 +21,9 @@ const macDesktop = desktop && /Mac/.test(navigator.platform);
 let workBrowser;
 const alwaysOnTopKey = 'next-up-always-on-top';
 let tasks = [];
+let taskStoreReady = !desktop;
+let savingTasks = false;
+let pendingTasks;
 try {
   const saved = localStorage.getItem(storageKey);
   if (saved) {
@@ -372,8 +375,66 @@ function update() {
   render();
 }
 
+function taskStorageStatus(message = '') {
+  const status = get('task-storage-status');
+  status.textContent = message;
+  status.hidden = !message;
+}
+
+function mirrorTasks() {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(tasks));
+    if (!desktop) taskStorageStatus();
+  } catch {
+    if (!desktop) taskStorageStatus('Could not save tasks to browser storage.');
+  }
+}
+
 function persist() {
-  try { localStorage.setItem(storageKey, JSON.stringify(tasks)); } catch {}
+  if (!taskStoreReady) return;
+  mirrorTasks();
+  if (!desktop) return;
+  pendingTasks = structuredClone(tasks);
+  void flushTasks();
+}
+
+async function flushTasks() {
+  if (savingTasks || !pendingTasks) return;
+  savingTasks = true;
+  try {
+    while (pendingTasks) {
+      const snapshot = pendingTasks;
+      pendingTasks = undefined;
+      try {
+        await desktop.invoke('save_tasks', {tasks: snapshot});
+        taskStorageStatus();
+      } catch (error) {
+        pendingTasks ??= snapshot;
+        taskStorageStatus('Could not save tasks. Next Up will retry.');
+        console.warn('save_tasks', error);
+        break;
+      }
+    }
+  } finally {
+    savingTasks = false;
+  }
+}
+
+async function loadTasks() {
+  if (!desktop) return;
+  try {
+    const saved = await desktop.invoke('load_tasks');
+    taskStoreReady = true;
+    if (Array.isArray(saved)) {
+      tasks = saved;
+      mirrorTasks();
+    } else if (tasks.length) {
+      persist();
+    }
+  } catch (error) {
+    taskStorageStatus('Could not load the task file. Task changes will not be saved.');
+    console.warn('load_tasks', error);
+  }
 }
 
 function enableTaskDrag(handle, row, list) {
@@ -494,6 +555,7 @@ function checkIn(now = Date.now()) {
 function tick() {
   const now = Date.now();
   sampleTrackingClock();
+  if (desktop) void flushTasks();
   updateTimes(now);
   if (!desktop && preferences.minutes && now >= next) checkIn(now);
   const seconds = Math.max(0, Math.ceil((next - now) / 1000));
@@ -674,23 +736,28 @@ function eventBinding(event) {
   ].filter(Boolean).join('+');
 }
 
-function shortcutLabel(binding) {
+function shortcutLabel(binding, compact = false) {
   const labels = {
-    Alt: macDesktop ? 'Option' : 'Alt',
-    Super: macDesktop ? 'Command' : 'Super',
+    Alt: macDesktop ? (compact ? '⌥' : 'Option') : 'Alt',
+    Ctrl: macDesktop && compact ? '⌃' : 'Ctrl',
+    Super: macDesktop ? (compact ? '⌘' : 'Command') : (compact ? 'Win' : 'Super'),
+    Shift: compact ? (macDesktop ? '⇧' : 'Shft') : 'Shift',
     BracketLeft: '[',
     BracketRight: ']',
   };
-  return binding.split('+').map(part => labels[part] ?? part.replace(/^(Key|Digit)/, '')).join('+');
+  return binding.split('+').map(part => labels[part] ?? part.replace(/^(Key|Digit)/, '')).join(compact && macDesktop ? '' : '+');
 }
 
 function renderShortcutGuide() {
   const guide = get('shortcut-guide');
+  const labels = {previous: 'Prev', next: 'Next', compose: 'New', pause: 'Pause/Resume'};
   guide.replaceChildren(...Object.entries(shortcutDefinitions).map(([action, {label}]) => {
     const item = document.createElement('li');
     const key = document.createElement('kbd');
-    key.textContent = shortcutLabel(bindings[action]);
-    item.append(key, ' ' + label);
+    key.textContent = shortcutLabel(bindings[action], true);
+    item.setAttribute('aria-label', label + ' ' + shortcutLabel(bindings[action]));
+    item.title = item.getAttribute('aria-label');
+    item.append(key, ' ' + labels[action]);
     return item;
   }));
 }
@@ -835,11 +902,6 @@ get('voice-form').onsubmit = event => {
   get('announcement').textContent = names.length + ' priorities added.';
 };
 
-render();
-tick();
-setInterval(tick, 1000);
-const initialPin = setPinned(pinned);
-
 function sizeDesktop() {
   if (!desktop) return;
   const widget = get('widget');
@@ -855,19 +917,27 @@ window.addEventListener('desktop-focus-switch', () => {
   }
 });
 
-if (desktop) {
-  syncBrowserPreference();
-  for (const [action, binding] of Object.entries(bindings)) {
-    registerShortcut(action, binding).catch(() => false).then(registered => {
-      if (!registered) get('shortcut-status').textContent = 'Some shortcuts are only available while Next Up is focused.';
-    });
+async function initialize() {
+  await loadTasks();
+  render();
+  tick();
+  setInterval(tick, 1000);
+  const initialPin = setPinned(pinned);
+  if (desktop) {
+    syncBrowserPreference();
+    for (const [action, binding] of Object.entries(bindings)) {
+      registerShortcut(action, binding).catch(() => false).then(registered => {
+        if (!registered) get('shortcut-status').textContent = 'Some shortcuts are only available while Next Up is focused.';
+      });
+    }
+    window.addEventListener('desktop-show', () => show(true));
+    const observer = new ResizeObserver(sizeDesktop);
+    observer.observe(get('widget'));
+    observer.observe(voice);
+    observer.observe(settings);
+    window.addEventListener('desktop-checkin', () => checkIn());
+    Promise.all([initialPin, sizeDesktop()]).then(() => native('show_widget'));
   }
-  window.addEventListener('desktop-show', () => show(true));
-  const observer = new ResizeObserver(sizeDesktop);
-  observer.observe(get('widget'));
-  observer.observe(voice);
-  observer.observe(settings);
-  window.addEventListener('desktop-checkin', () => checkIn());
-  Promise.all([initialPin, sizeDesktop()]).then(() => native('show_widget'));
+  scheduleCheckIn();
 }
-scheduleCheckIn();
+void initialize();

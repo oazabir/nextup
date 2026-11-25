@@ -17,6 +17,7 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 mod awake_clock;
 mod focus_switch;
+mod task_store;
 use awake_clock::AwakeClock;
 
 #[tauri::command]
@@ -225,6 +226,8 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             open_task_link,
+            task_store::load_tasks,
+            task_store::save_tasks,
             set_task_shortcut,
             resize_widget,
             show_widget,
