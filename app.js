@@ -665,7 +665,7 @@ window.addEventListener('desktop-focus-switch', () => {
   void widget.offsetWidth;
   widget.classList.add('focus-pulse');
   clearTimeout(focusPulseTimeout);
-  focusPulseTimeout = setTimeout(() => widget.classList.remove('focus-pulse'), 950);
+  focusPulseTimeout = setTimeout(() => widget.classList.remove('focus-pulse'), 1500);
 });
 
 if (desktop) {

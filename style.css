@@ -435,20 +435,28 @@ html:not(.desktop) .desktop-capture { display: none; }
 
 .focus-pulse :is(.task.running, .glance-focus.tracking) {
   position: relative;
+  isolation: isolate;
 }
 .focus-pulse :is(.task.running, .glance-focus.tracking)::after {
   content: '';
   position: absolute;
-  inset: -3px;
+  inset: -3px -4px;
+  z-index: -1;
   border-radius: 11px;
-  box-shadow: inset 0 0 0 2px #5579e1, 0 0 10px #5579e185;
+  background: linear-gradient(105deg, #a3b8ff, #bec0ff 28%, #efbeff 49%, #a1d9ff 72%, #a3b8ff);
+  background-size: 240% 100%;
+  box-shadow: inset 0 0 0 1px #6179df, 0 0 14px #657de191;
   pointer-events: none;
-  animation: focus-reminder .9s ease-out both;
+  animation: focus-reminder 1.45s ease-in-out both;
 }
 @keyframes focus-reminder {
-  0%, 100% { opacity: 0; }
-  24% { opacity: 1; }
+  0% { opacity: 0; background-position: 100% 50%; }
+  15%, 65% { opacity: 1; }
+  100% { opacity: 0; background-position: 0% 50%; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .focus-pulse :is(.task.running, .glance-focus.tracking)::after { animation: none; }
+  .focus-pulse :is(.task.running, .glance-focus.tracking)::after {
+    animation: none;
+    background-position: 50% 50%;
+  }
 }
