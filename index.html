@@ -34,32 +34,6 @@
     <div id="task-menu" hidden><button type="button" id="set-deadline">Set deadline</button></div>
   </section>
 </main>
-<dialog id="onboarding" aria-labelledby="onboarding-title">
-  <h2 id="onboarding-title">Which browser do you work in most?</h2>
-  <form id="browser-form">
-    <p>Pick the browser where switching tabs makes it easy to lose track of what you were working on.</p>
-    <label for="work-browser">Work browser</label>
-    <select id="work-browser" required>
-      <option value="" selected disabled>Choose a browser</option>
-      <option value="chrome">Google Chrome</option>
-      <option value="safari">Safari</option>
-      <option value="edge">Microsoft Edge</option>
-      <option value="firefox">Firefox</option>
-      <option value="chromium">Another Chromium browser</option>
-      <option value="other">Another browser</option>
-    </select>
-    <p id="browser-help" aria-live="polite"></p>
-    <div class="onboarding-actions">
-      <button type="button" id="skip-browser">Skip</button>
-      <button class="primary" id="browser-next" type="submit" disabled>Continue</button>
-    </div>
-  </form>
-  <form id="onboarding-form" hidden>
-    <p>Add your next three priorities in the order you want to tackle them.</p>
-    <ol id="onboarding-tasks"></ol>
-    <button class="primary" type="submit">Start first task</button>
-  </form>
-</dialog>
 <dialog id="voice" aria-label="New task">
   <form id="voice-form">
     <div class="composer-field">

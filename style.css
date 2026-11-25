@@ -405,35 +405,6 @@ html.desktop, .desktop body { background: transparent; overflow: hidden; }
 }
 .desktop .widget-top { background: #eaf0fa88; }
 .desktop:has(#voice[open]) .widget { visibility: hidden; }
-.desktop:has(#onboarding[open]) .widget { visibility: hidden; }
-#onboarding {
-  width: min(392px, calc(100% - 24px));
-  max-height: calc(100% - 24px);
-  padding: 20px;
-  border: 1px solid #ffffffd0;
-  border-radius: 18px;
-  background: #f4f7ffee;
-  color: var(--ink);
-  box-shadow: 0 14px 44px #27396d40;
-}
-#onboarding[open] { animation: reveal .24s var(--ease) both; }
-#onboarding::backdrop { background: #202f5524; backdrop-filter: blur(3px); }
-.desktop #onboarding::backdrop { background: transparent; backdrop-filter: none; }
-#onboarding h2 { margin: 0 0 5px; font-size: 24px; letter-spacing: -.035em; }
-#onboarding p { margin: 0; color: var(--muted); font-size: 13px; }
-#onboarding-tasks { display: grid; gap: 12px; margin: 16px 0; padding: 0; list-style: none; }
-#onboarding-tasks li { display: grid; gap: 5px; }
-#onboarding-tasks label { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; font-size: 12px; font-weight: 650; }
-#onboarding-tasks small { color: var(--muted); font-size: inherit; font-weight: 400; }
-#onboarding-tasks input { min-width: 0; padding: 5px 7px; border: 1px solid var(--line); border-radius: 7px; background: #ffffffad; color: var(--ink); font: inherit; }
-#onboarding-tasks input[type=text] { flex-basis: 100%; }
-#onboarding-tasks input[type=datetime-local] { margin-left: auto; }
-#onboarding button { display: block; margin-left: auto; }
-#browser-form label { display: block; margin: 16px 0 6px; font-size: 12px; font-weight: 650; }
-#work-browser { width: 100%; padding: 9px; border: 1px solid var(--line); border-radius: 8px; background: #ffffffad; color: var(--ink); font: inherit; }
-#browser-help:not(:empty) { margin-top: 10px; }
-.onboarding-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
-#onboarding .onboarding-actions button { margin: 0; }
 .desktop #voice { max-height: none; background: #edf3ffb8; }
 .desktop #voice::backdrop { background: transparent; backdrop-filter: none; }
 html:not(.desktop) .desktop-capture { display: none; }

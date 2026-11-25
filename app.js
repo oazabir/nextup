@@ -13,15 +13,11 @@ const macDesktop = desktop && /Mac/.test(navigator.platform);
 let workBrowser;
 const alwaysOnTopKey = 'next-up-always-on-top';
 let tasks = [];
-let needsOnboarding = true;
 try {
   const saved = localStorage.getItem(storageKey);
   if (saved) {
     const storedTasks = JSON.parse(saved);
-    if (Array.isArray(storedTasks)) {
-      tasks = storedTasks;
-      needsOnboarding = false;
-    }
+    if (Array.isArray(storedTasks)) tasks = storedTasks;
   }
 } catch {}
 try { workBrowser = localStorage.getItem(browserKey); } catch {}
@@ -37,7 +33,6 @@ let shortcutOrder;
 let clockSample;
 let clockRequestPending = false;
 const voice = get('voice');
-const onboarding = get('onboarding');
 let transcript = get('transcript');
 const deadline = get('deadline');
 const taskMenu = get('task-menu');
@@ -428,7 +423,7 @@ function pulseTask(task) {
 
 function checkIn(now = Date.now()) {
   next = now + interval;
-  if (voice.open || onboarding.open) return;
+  if (voice.open) return;
   show();
   if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
     get('widget').animate(
@@ -478,7 +473,7 @@ function deadlineInputValue(timestamp) {
 }
 
 function openVoice(other, task) {
-  if (voice.open || onboarding.open) return;
+  if (voice.open) return;
   closeTaskMenu();
   editingTask = task;
   captureCurrent = other;
@@ -561,7 +556,7 @@ get('pin').onclick = () => {
   try { localStorage.setItem(alwaysOnTopKey, String(pinned)); } catch {}
 };
 window.addEventListener(desktop ? 'desktop-blur' : 'blur', () => {
-  if (!voice.open && !onboarding.open) collapse();
+  if (!voice.open) collapse();
 });
 get('capture').onclick = get('desktop-capture').onclick = () => openVoice(false);
 get('different').onclick = () => openVoice(true);
@@ -586,7 +581,7 @@ document.addEventListener('keydown', event => {
 window.addEventListener('desktop-shortcut', event => useShortcut(event.detail));
 
 function useShortcut(direction) {
-  if (voice.open || onboarding.open) return;
+  if (voice.open) return;
   if (!direction) {
     openVoice(true);
     return;
@@ -642,94 +637,6 @@ get('voice-form').onsubmit = event => {
   get('announcement').textContent = names.length + ' priorities added.';
 };
 
-{
-  const fields = Array.from({length: 3}, (_, index) => {
-    const row = document.createElement('li');
-    row.innerHTML = `<label>Task ${index + 1}<input type="text" name="task" required></label>
-      <label>Deadline <small>(optional)</small><input type="datetime-local" name="deadline"></label>`;
-    get('onboarding-tasks').append(row);
-    const title = row.querySelector('[name=task]');
-    title.oninput = () => title.setCustomValidity('');
-    return {title, due: row.querySelector('[name=deadline]')};
-  });
-  onboarding.oncancel = event => event.preventDefault();
-  const browserForm = get('browser-form');
-  const taskForm = get('onboarding-form');
-  const browserSelect = get('work-browser');
-  const title = get('onboarding-title');
-  const showPriorities = () => {
-    browserForm.hidden = true;
-    taskForm.hidden = false;
-    title.textContent = 'What’s next for you?';
-    fields[0].title.focus();
-  };
-  const finishBrowser = browser => {
-    workBrowser = browser;
-    try { localStorage.setItem(browserKey, browser); } catch {}
-    if (needsOnboarding) {
-      showPriorities();
-    } else {
-      if (macDesktop) native('set_work_browser', { browser });
-      onboarding.close();
-      native('schedule_checkin');
-    }
-    sizeDesktop();
-  };
-  browserSelect.onchange = () => {
-    const browser = browserSelect.value;
-    get('browser-next').disabled = !browser;
-    get('browser-help').textContent =
-      !browser ? '' : macDesktop && (browser === 'chrome' || browser === 'safari')
-        ? 'When you bring this browser forward, macOS will ask to let Next Up detect tab switches.'
-        : ['chrome', 'edge', 'chromium'].includes(browser)
-          ? 'For tab reminders, load the Next Up browser-extension folder from your browser’s Extensions page in developer mode.'
-          : 'Tab reminders are unavailable for this browser here. Five-minute check-ins still work.';
-    sizeDesktop();
-  };
-  browserForm.onsubmit = event => {
-    event.preventDefault();
-    if (browserSelect.value) finishBrowser(browserSelect.value);
-  };
-  get('skip-browser').onclick = () => finishBrowser('skipped');
-  get('onboarding-form').onsubmit = event => {
-    event.preventDefault();
-    for (const {title} of fields) {
-      if (title.value.trim()) continue;
-      title.setCustomValidity('Enter a task title.');
-      title.reportValidity();
-      return;
-    }
-    tasks = fields.map(({title, due}) => ({
-      id: crypto.randomUUID(), name: title.value.trim(), done: false,
-      deadlineAt: due.value ? new Date(due.value).getTime() : null
-    }));
-    needsOnboarding = false;
-    if (macDesktop) native('set_work_browser', { browser: workBrowser });
-    onboarding.close();
-    startTask(tasks[0]);
-    next = Date.now() + interval;
-    sizeDesktop();
-    native('schedule_checkin');
-  };
-  const openBrowserStep = () => {
-    if (onboarding.open || voice.open) return;
-    browserForm.hidden = false;
-    taskForm.hidden = true;
-    title.textContent = 'Which browser do you work in most?';
-    browserSelect.value = workBrowser === 'skipped' ? '' : workBrowser ?? '';
-    get('browser-next').textContent = needsOnboarding ? 'Continue' : 'Done';
-    onboarding.showModal();
-    browserSelect.onchange();
-  };
-  window.addEventListener('desktop-browser-setup', openBrowserStep);
-  if (workBrowser == null) {
-    openBrowserStep();
-  } else if (needsOnboarding) {
-    onboarding.showModal();
-    showPriorities();
-  }
-}
-
 render();
 tick();
 setInterval(tick, 1000);
@@ -738,28 +645,26 @@ const initialPin = setPinned(pinned);
 function sizeDesktop() {
   if (!desktop) return;
   const widget = get('widget');
-  const dialog = onboarding.open ? onboarding : voice;
-  const height = dialog.open ? Math.max(widget.offsetHeight, dialog.scrollHeight + 12) : widget.offsetHeight;
+  const height = voice.open ? Math.max(widget.offsetHeight, voice.scrollHeight + 12) : widget.offsetHeight;
   return native('resize_widget', { height: height + 24 });
 }
 
 window.addEventListener('desktop-focus-switch', () => {
   const task = currentTask();
-  if (task && !voice.open && !onboarding.open && !get('widget').classList.contains('closed')) {
+  if (task && !voice.open && !get('widget').classList.contains('closed')) {
     pulseTask(task);
   }
 });
 
 if (desktop) {
-  if (macDesktop && !needsOnboarding && workBrowser != null) {
+  if (macDesktop && workBrowser != null) {
     native('set_work_browser', { browser: workBrowser });
   }
   window.addEventListener('desktop-show', () => show(true));
   const observer = new ResizeObserver(sizeDesktop);
   observer.observe(get('widget'));
   observer.observe(voice);
-  observer.observe(onboarding);
   window.addEventListener('desktop-checkin', () => checkIn());
   Promise.all([initialPin, sizeDesktop()]).then(() => native('show_widget'));
-  if (!onboarding.open) native('schedule_checkin');
+  native('schedule_checkin');
 }

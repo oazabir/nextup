@@ -1,8 +1,0 @@
-{
-  "manifest_version": 3,
-  "name": "Next Up Tab Switch Reminder",
-  "version": "1.0.0",
-  "description": "Signals the Next Up desktop app when you switch tabs in the focused browser window.",
-  "host_permissions": ["http://127.0.0.1/*"],
-  "background": { "service_worker": "background.js" }
-}

@@ -39,14 +39,8 @@ The same three frontend files can also be served with `python3 -m http.server 87
 - Ctrl+Alt/Option+[ and ] switch tasks. Ctrl+Alt/Option+N opens the composer. Global registration relies on the Tauri shortcut plugin and uses X11 on Linux. Focused shortcuts are available as a fallback.
 - The microphone uses the webview's speech recognition API when exposed. Typing works without speech recognition. Parakeet V3 is not bundled.
 
-## Focus reminders on window and tab switches
+## Focus reminders on window switches
 
 While a task is running, Next Up briefly highlights it when you switch windows. The reminder keeps keyboard focus in your current app. Keep Always on Top enabled if you want to see the pulse over other windows. Window detection works on macOS, Windows, and X11 desktops with `xprop` installed. Native Wayland windows are outside the X11 monitor's view.
-
-Onboarding asks which browser you work in most before you enter your first three priorities. You can skip this step or revisit it from **Work Browser…** in the desktop tray menu.
-
-On macOS, selecting Google Chrome or Safari enables Apple Events monitoring while that browser is in the foreground. When prompted, allow Next Up to control the selected browser. Each browser has its own permission under **System Settings → Privacy & Security → Automation**. Next Up compares the active window ID and either Chrome's tab ID or Safari's tab position.
-
-For Edge and other Chromium browsers, or Chrome on Windows and Linux, open the browser's Extensions page, enable **Developer mode**, click **Load unpacked**, and select the `browser-extension` directory. The extension sends a single signal over loopback and shares no URLs, tab titles, or browsing history.
 
 Every five minutes, the floating window shakes and the first unfinished task flashes, even if its timer is paused. With Reduce Motion enabled, the task gets a stationary highlight.

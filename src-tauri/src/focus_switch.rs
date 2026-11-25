@@ -1,6 +1,4 @@
 use std::{
-    io::{BufRead, BufReader, Write},
-    net::{Ipv4Addr, TcpListener, TcpStream},
     sync::{Arc, Mutex},
     thread,
     time::{Duration, Instant},
@@ -34,7 +32,6 @@ pub fn set_work_browser(browser: &str, preference: tauri::State<'_, BrowserPrefe
     }
 }
 
-const PORT: u16 = 43817;
 type Notify = Arc<dyn Fn() + Send + Sync>;
 
 pub fn start(window: WebviewWindow) {
@@ -53,65 +50,12 @@ pub fn start(window: WebviewWindow) {
         let _ = window.eval("window.dispatchEvent(new Event('desktop-focus-switch'))");
     });
 
-    let browser_notify = Arc::clone(&notify);
-    thread::spawn(
-        move || match TcpListener::bind((Ipv4Addr::LOCALHOST, PORT)) {
-            Ok(listener) => {
-                for mut stream in listener.incoming().flatten() {
-                    if is_browser_signal(&mut stream) {
-                        browser_notify();
-                        let _ = stream
-                            .write_all(b"HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n");
-                    }
-                }
-            }
-            Err(error) => eprintln!("Could not start Next Up browser switch listener: {error}"),
-        },
-    );
     #[cfg(target_os = "macos")]
     {
         let browser_notify = Arc::clone(&notify);
         thread::spawn(move || browser::watch(browser_notify, preference));
     }
     thread::spawn(move || watch_windows(notify));
-}
-
-fn is_browser_signal(stream: &mut TcpStream) -> bool {
-    if stream
-        .set_read_timeout(Some(Duration::from_millis(200)))
-        .is_err()
-    {
-        return false;
-    }
-    use std::io::Read;
-    let mut reader = BufReader::new(stream.take(4096));
-    let mut line = String::new();
-    if reader.read_line(&mut line).is_err() || line.trim_end() != "POST /tab-switch HTTP/1.1" {
-        return false;
-    }
-    let mut extension_origin = false;
-    let mut event_header = false;
-    loop {
-        line.clear();
-        match reader.read_line(&mut line) {
-            Ok(0) | Err(_) => return false,
-            Ok(_) if line == "\r\n" => return extension_origin && event_header,
-            Ok(_) => {}
-        }
-        if let Some((name, value)) = line.split_once(':') {
-            if name.eq_ignore_ascii_case("origin") {
-                extension_origin = value
-                    .trim()
-                    .strip_prefix("chrome-extension://")
-                    .is_some_and(|id| {
-                        id.len() == 32 && id.bytes().all(|letter| (b'a'..=b'p').contains(&letter))
-                    });
-            }
-            if name.eq_ignore_ascii_case("x-next-up-event") {
-                event_header = value.trim() == "tab-switch";
-            }
-        }
-    }
 }
 
 #[cfg(any(target_os = "macos", target_os = "windows"))]
@@ -198,7 +142,10 @@ fn foreground_window() -> Option<usize> {
 
 #[cfg(target_os = "linux")]
 fn watch_windows(notify: Notify) {
-    use std::process::{Command, Stdio};
+    use std::{
+        io::{BufRead, BufReader},
+        process::{Command, Stdio},
+    };
 
     if std::env::var_os("DISPLAY").is_none() {
         return;
