@@ -13,7 +13,7 @@ use tauri::{
     tray::TrayIconBuilder,
     LogicalSize, Manager, PhysicalPosition, WebviewWindow,
 };
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 mod awake_clock;
 mod focus_switch;
@@ -116,12 +116,60 @@ fn schedule_checkin(
     });
 }
 
-fn main() {
-    let modifiers = Some(Modifiers::CONTROL | Modifiers::ALT);
-    let previous = Shortcut::new(modifiers, Code::BracketLeft);
-    let next = Shortcut::new(modifiers, Code::BracketRight);
-    let compose = Shortcut::new(modifiers, Code::KeyN);
+#[tauri::command]
+async fn set_task_shortcut(
+    window: WebviewWindow,
+    action: String,
+    binding: String,
+    previous: Option<String>,
+) -> Result<bool, String> {
+    if cfg!(target_os = "linux") && std::env::var_os("DISPLAY").is_none() {
+        return Ok(false);
+    }
+    let detail = match action.as_str() {
+        "previous" => "-1",
+        "next" => "1",
+        "compose" => "0",
+        "pause" => "'pause'",
+        _ => return Err("Unknown shortcut action".into()),
+    };
+    let shortcut = binding
+        .parse::<Shortcut>()
+        .map_err(|error| error.to_string())?;
+    let previous = previous
+        .map(|value| value.parse::<Shortcut>())
+        .transpose()
+        .map_err(|error| error.to_string())?;
+    if previous == Some(shortcut) {
+        return Ok(true);
+    }
+    let manager = window.global_shortcut();
+    let focus = action == "compose";
+    let script = format!(
+        "window.dispatchEvent(new CustomEvent('desktop-shortcut', {{ detail: {detail} }}))"
+    );
+    let target = window.clone();
+    manager
+        .on_shortcut(shortcut, move |_, _, event| {
+            if event.state() == ShortcutState::Pressed {
+                if focus {
+                    let _ = show_widget(target.clone());
+                    let _ = target.set_focus();
+                }
+                let _ = target.eval(&script);
+            }
+        })
+        .map_err(|error| error.to_string())?;
+    if let Some(previous) = previous {
+        if let Err(error) = manager.unregister(previous) {
+            let _ = manager.unregister(shortcut);
+            return Err(error.to_string());
+        }
+    }
+    Ok(true)
+}
 
+fn main() {
     let has_global_shortcuts = !cfg!(target_os = "linux") || std::env::var_os("DISPLAY").is_some();
     let clock = AwakeClock::default();
     clock.start();
@@ -130,27 +178,7 @@ fn main() {
         .manage(focus_switch::BrowserPreference::default())
         .manage(clock);
     if has_global_shortcuts {
-        builder = builder.plugin(
-            tauri_plugin_global_shortcut::Builder::new()
-                .with_handler(move |app, shortcut, event| {
-                    if event.state() != ShortcutState::Pressed {
-                        return;
-                    }
-                    if let Some(window) = app.get_webview_window("main") {
-                        let script = if shortcut == &compose {
-                            let _ = show_widget(window.clone());
-                            let _ = window.set_focus();
-                            "window.dispatchEvent(new CustomEvent('desktop-shortcut', { detail: 0 }))"
-                        } else if shortcut == &previous {
-                            "window.dispatchEvent(new CustomEvent('desktop-shortcut', { detail: -1 }))"
-                        } else {
-                            "window.dispatchEvent(new CustomEvent('desktop-shortcut', { detail: 1 }))"
-                        };
-                        let _ = window.eval(script);
-                    }
-                })
-                .build(),
-        );
+        builder = builder.plugin(tauri_plugin_global_shortcut::Builder::new().build());
     }
     builder
         .on_window_event(|window, event| {
@@ -163,13 +191,6 @@ fn main() {
         .setup(move |app| {
             if let Some(window) = app.get_webview_window("main") {
                 focus_switch::start(window);
-            }
-            if has_global_shortcuts {
-                for shortcut in [previous, next, compose] {
-                    if let Err(error) = app.global_shortcut().register(shortcut) {
-                        eprintln!("Could not register desktop shortcut {shortcut:?}: {error}");
-                    }
-                }
             }
             let show = MenuItem::with_id(app, "show", "Show Next Up", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit Next Up", true, None::<&str>)?;
@@ -204,6 +225,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             open_task_link,
+            set_task_shortcut,
             resize_widget,
             show_widget,
             hide_widget,

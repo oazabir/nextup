@@ -10,7 +10,7 @@
 <body>
 <header class="bar">
   <div class="brand"><span class="mark" aria-hidden="true">↗</span> Next Up</div>
-  <div class="tools"><span class="timer"><span class="dot"></span> Next check-in <strong id="countdown">5:00</strong></span><button id="show">Show check-in <span aria-hidden="true">↗</span></button></div>
+  <div class="tools"><span class="timer"><span class="dot"></span> Next check-in <strong id="countdown">5:00</strong></span><button id="toolbar-settings">Settings</button><button id="show">Show check-in <span aria-hidden="true">↗</span></button></div>
 </header>
 <main>
   <div class="wallpaper" aria-hidden="true"></div>
@@ -31,6 +31,7 @@
       <ul id="tasks" aria-label="Priorities in order"></ul>
     </div>
     <div class="check-question"><a id="task-link-open" target="_blank" rel="noopener noreferrer" hidden>Open link ↗</a><button id="different">Something new</button></div>
+    <ul id="shortcut-guide" aria-label="Keyboard shortcuts"></ul>
     <div id="task-menu" hidden><button type="button" id="edit-task">Edit task, deadline or link</button></div>
   </section>
 </main>
@@ -51,6 +52,11 @@
   </label>
   <label>Shake during check-in <input id="settings-shake" type="checkbox"></label>
   <label>Highlight task on window switch <input id="settings-switch" type="checkbox"></label>
+  <fieldset id="shortcut-settings">
+    <legend>Keyboard shortcuts</legend>
+    <div id="shortcut-controls"></div>
+    <p id="shortcut-status" role="status"></p>
+  </fieldset>
 </dialog>
 <dialog id="voice" aria-label="New task">
   <form id="voice-form">

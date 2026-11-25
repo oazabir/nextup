@@ -40,6 +40,21 @@ let menuTrigger;
 let shortcutOrder;
 let clockSample;
 let clockRequestPending = false;
+const shortcutDefinitions = {
+  previous: {label: 'Previous task', detail: -1, binding: 'Ctrl+Alt+BracketLeft'},
+  next: {label: 'Next task', detail: 1, binding: 'Ctrl+Alt+BracketRight'},
+  compose: {label: 'New task', detail: 0, binding: 'Ctrl+Alt+KeyN'},
+  pause: {label: 'Pause / resume', detail: 'pause', binding: 'Ctrl+Alt+Space'},
+};
+const shortcutKey = 'next-up-shortcuts';
+const bindings = Object.fromEntries(Object.entries(shortcutDefinitions).map(([action, item]) => [action, item.binding]));
+const registeredShortcuts = {};
+try {
+  const saved = JSON.parse(localStorage.getItem(shortcutKey));
+  for (const action of Object.keys(bindings)) {
+    if (typeof saved?.[action] === 'string') bindings[action] = saved[action];
+  }
+} catch {}
 const voice = get('voice');
 const settings = get('settings');
 let transcript = get('transcript');
@@ -635,7 +650,7 @@ function openSettings() {
   settings.showModal();
   sizeDesktop();
 }
-get('open-settings').onclick = openSettings;
+get('open-settings').onclick = get('toolbar-settings').onclick = openSettings;
 window.addEventListener('desktop-settings', openSettings);
 settings.addEventListener('close', sizeDesktop);
 window.addEventListener(desktop ? 'desktop-blur' : 'blur', () => {
@@ -647,6 +662,87 @@ get('edit-task').onclick = () => openVoice(true, menuTask);
 document.addEventListener('pointerdown', event => {
   if (!taskMenu.contains(event.target)) closeTaskMenu();
 });
+function eventBinding(event) {
+  if (event.isComposing || !/^(Key[A-Z]|Digit[0-9]|F(?:[1-9]|1[0-2])|BracketLeft|BracketRight|Space)$/.test(event.code)) return;
+  if (!event.ctrlKey && !event.altKey && !event.metaKey) return;
+  return [
+    event.ctrlKey && 'Ctrl',
+    event.altKey && 'Alt',
+    event.shiftKey && 'Shift',
+    event.metaKey && 'Super',
+    event.code,
+  ].filter(Boolean).join('+');
+}
+
+function shortcutLabel(binding) {
+  const labels = {
+    Alt: macDesktop ? 'Option' : 'Alt',
+    Super: macDesktop ? 'Command' : 'Super',
+    BracketLeft: '[',
+    BracketRight: ']',
+  };
+  return binding.split('+').map(part => labels[part] ?? part.replace(/^(Key|Digit)/, '')).join('+');
+}
+
+function renderShortcutGuide() {
+  const guide = get('shortcut-guide');
+  guide.replaceChildren(...Object.entries(shortcutDefinitions).map(([action, {label}]) => {
+    const item = document.createElement('li');
+    const key = document.createElement('kbd');
+    key.textContent = shortcutLabel(bindings[action]);
+    item.append(key, ' ' + label);
+    return item;
+  }));
+}
+
+async function registerShortcut(action, binding) {
+  if (!desktop) return;
+  const registered = await desktop.invoke('set_task_shortcut', {action, binding, previous: registeredShortcuts[action] ?? null});
+  if (registered) registeredShortcuts[action] = binding;
+  return registered;
+}
+
+for (const [action, {label}] of Object.entries(shortcutDefinitions)) {
+  const row = document.createElement('label');
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.readOnly = true;
+  input.value = shortcutLabel(bindings[action]);
+  input.title = 'Focus this field and press a new shortcut';
+  input.addEventListener('focus', () => {
+    get('shortcut-status').textContent = 'Press a shortcut using Control, Alt, or Command.';
+  });
+  input.addEventListener('keydown', async event => {
+    const binding = eventBinding(event);
+    if (!binding || event.repeat) return;
+    event.preventDefault();
+    if (binding === bindings[action]) return;
+    const status = get('shortcut-status');
+    if (Object.entries(bindings).some(([other, value]) => other !== action && value === binding)) {
+      status.textContent = 'That shortcut is already in use.';
+      return;
+    }
+    const controls = get('shortcut-settings');
+    if (controls.disabled) return;
+    controls.disabled = true;
+    try {
+      const registered = await registerShortcut(action, binding);
+      bindings[action] = binding;
+      input.value = shortcutLabel(binding);
+      try { localStorage.setItem(shortcutKey, JSON.stringify(bindings)); } catch {}
+      renderShortcutGuide();
+      status.textContent = desktop && !registered ? 'Saved for use while Next Up is focused.' : 'Shortcut saved.';
+    } catch {
+      status.textContent = 'That shortcut could not be registered. Try another combination.';
+    } finally {
+      controls.disabled = false;
+    }
+  });
+  row.append(label, input);
+  get('shortcut-controls').append(row);
+}
+renderShortcutGuide();
+
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !taskMenu.hidden) {
     event.preventDefault();
@@ -654,17 +750,28 @@ document.addEventListener('keydown', event => {
     return;
   }
   if (event.key === 'Tab' && !taskMenu.hidden) closeTaskMenu(true);
-  if (!event.ctrlKey || !event.altKey || event.metaKey || event.shiftKey || event.isComposing) return;
-  const direction = {BracketLeft: -1, BracketRight: 1}[event.code];
-  if (event.code !== 'KeyN' && !direction) return;
+  const binding = eventBinding(event);
+  const action = Object.keys(bindings).find(action => bindings[action] === binding);
+  if (!action || registeredShortcuts[action] === binding || settings.open || voice.open) return;
   event.preventDefault();
-  if (event.repeat) return;
-  useShortcut(direction || 0);
+  if (!event.repeat) useShortcut(shortcutDefinitions[action].detail);
 });
 window.addEventListener('desktop-shortcut', event => useShortcut(event.detail));
 
 function useShortcut(direction) {
   if (voice.open || settings.open) return;
+  if (direction === 'pause') {
+    const running = currentTask();
+    if (running) {
+      stopTask(running);
+      update();
+      get('announcement').textContent = 'Timer paused.';
+    } else {
+      const task = tasks.find(task => !task.done);
+      if (task) startTask(task, true);
+    }
+    return;
+  }
   if (!direction) {
     openVoice(true);
     return;
@@ -750,6 +857,11 @@ window.addEventListener('desktop-focus-switch', () => {
 
 if (desktop) {
   syncBrowserPreference();
+  for (const [action, binding] of Object.entries(bindings)) {
+    registerShortcut(action, binding).catch(() => false).then(registered => {
+      if (!registered) get('shortcut-status').textContent = 'Some shortcuts are only available while Next Up is focused.';
+    });
+  }
   window.addEventListener('desktop-show', () => show(true));
   const observer = new ResizeObserver(sizeDesktop);
   observer.observe(get('widget'));
