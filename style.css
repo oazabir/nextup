@@ -433,11 +433,11 @@ html.desktop, .desktop body { background: transparent; overflow: hidden; }
 .desktop #voice::backdrop { background: transparent; backdrop-filter: none; }
 html:not(.desktop) .desktop-capture { display: none; }
 
-.focus-pulse :is(.task.running, .glance-focus.tracking) {
+:is(.task, .glance-focus).focus-pulse {
   position: relative;
   isolation: isolate;
 }
-.focus-pulse :is(.task.running, .glance-focus.tracking)::after {
+:is(.task, .glance-focus).focus-pulse::after {
   content: '';
   position: absolute;
   inset: -3px -4px;
@@ -455,7 +455,7 @@ html:not(.desktop) .desktop-capture { display: none; }
   100% { opacity: 0; background-position: 0% 50%; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .focus-pulse :is(.task.running, .glance-focus.tracking)::after {
+  :is(.task, .glance-focus).focus-pulse::after {
     animation: none;
     background-position: 50% 50%;
   }

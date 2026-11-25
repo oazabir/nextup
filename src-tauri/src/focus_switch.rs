@@ -8,6 +8,9 @@ use std::{
 
 use tauri::WebviewWindow;
 
+#[cfg(target_os = "macos")]
+mod chrome;
+
 const PORT: u16 = 43817;
 type Notify = Arc<dyn Fn() + Send + Sync>;
 
@@ -40,6 +43,11 @@ pub fn start(window: WebviewWindow) {
             Err(error) => eprintln!("Could not start Next Up browser switch listener: {error}"),
         },
     );
+    #[cfg(target_os = "macos")]
+    {
+        let chrome_notify = Arc::clone(&notify);
+        thread::spawn(move || chrome::watch(chrome_notify));
+    }
     thread::spawn(move || watch_windows(notify));
 }
 

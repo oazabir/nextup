@@ -406,15 +406,36 @@ function dismiss() {
   tick();
 }
 
+let focusPulseTimeout;
+let pulsingRows = [];
+
+function pulseTask(task) {
+  clearTimeout(focusPulseTimeout);
+  for (const row of pulsingRows) row.classList.remove('focus-pulse');
+  pulsingRows = [...document.querySelectorAll('#tasks .task, #glance-focus')]
+    .filter(row => row.dataset.id === task.id);
+  void get('widget').offsetWidth;
+  for (const row of pulsingRows) row.classList.add('focus-pulse');
+  focusPulseTimeout = setTimeout(() => {
+    for (const row of pulsingRows) row.classList.remove('focus-pulse');
+    pulsingRows = [];
+  }, 1500);
+}
+
+function checkIn(now = Date.now()) {
+  next = now + interval;
+  if (voice.open || onboarding.open) return;
+  show();
+  const first = tasks.find(task => !task.done);
+  if (first) pulseTask(first);
+  get('announcement').textContent = 'Time for a focus check-in.';
+}
+
 function tick() {
   const now = Date.now();
   sampleTrackingClock();
   updateTimes(now);
-  if (!desktop && now >= next) {
-    show();
-    next = now + interval;
-    get('announcement').textContent = 'Time for a focus check-in.';
-  }
+  if (!desktop && now >= next) checkIn(now);
   const seconds = Math.max(0, Math.ceil((next - now) / 1000));
   get('countdown').textContent = Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
 }
@@ -656,16 +677,11 @@ function sizeDesktop() {
   return native('resize_widget', { height: height + 24 });
 }
 
-let focusPulseTimeout;
 window.addEventListener('desktop-focus-switch', () => {
-  const widget = get('widget');
-  if (!currentTask() || voice.open || onboarding.open || widget.classList.contains('closed')) return;
-
-  widget.classList.remove('focus-pulse');
-  void widget.offsetWidth;
-  widget.classList.add('focus-pulse');
-  clearTimeout(focusPulseTimeout);
-  focusPulseTimeout = setTimeout(() => widget.classList.remove('focus-pulse'), 1500);
+  const task = currentTask();
+  if (task && !voice.open && !onboarding.open && !get('widget').classList.contains('closed')) {
+    pulseTask(task);
+  }
 });
 
 if (desktop) {
@@ -674,11 +690,7 @@ if (desktop) {
   observer.observe(get('widget'));
   observer.observe(voice);
   observer.observe(onboarding);
-  window.addEventListener('desktop-checkin', () => {
-    next = Date.now() + interval;
-    show();
-    get('announcement').textContent = 'Time for a focus check-in.';
-  });
+  window.addEventListener('desktop-checkin', () => checkIn());
   Promise.all([initialPin, sizeDesktop()]).then(() => native('show_widget'));
   if (!onboarding.open) native('schedule_checkin');
 }

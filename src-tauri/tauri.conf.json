@@ -29,6 +29,9 @@
   },
   "bundle": {
     "active": true,
+    "macOS": {
+      "entitlements": "Entitlements.plist"
+    },
     "icon": [
       "icons/icon.png",
       "icons/icon.ico",
