@@ -24,6 +24,31 @@ fn awake_millis(clock: tauri::State<'_, AwakeClock>) -> u64 {
     clock.millis()
 }
 
+#[tauri::command]
+fn open_task_link(url: &str) -> Result<(), String> {
+    let url = tauri::Url::parse(url).map_err(|error| error.to_string())?;
+    if !matches!(url.scheme(), "http" | "https")
+        || url.host().is_none()
+        || !url.username().is_empty()
+        || url.password().is_some()
+    {
+        return Err("Expected an HTTP or HTTPS link without credentials.".into());
+    }
+
+    #[cfg(target_os = "macos")]
+    let opener = "open";
+    #[cfg(target_os = "linux")]
+    let opener = "xdg-open";
+    #[cfg(target_os = "windows")]
+    let opener = "explorer.exe";
+
+    std::process::Command::new(opener)
+        .arg(url.as_str())
+        .spawn()
+        .map_err(|error| error.to_string())?;
+    Ok(())
+}
+
 fn place_widget(window: &WebviewWindow) -> tauri::Result<()> {
     if let Some(monitor) = window.current_monitor()?.or(window.primary_monitor()?) {
         let area = monitor.work_area();
@@ -178,6 +203,7 @@ fn main() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            open_task_link,
             resize_widget,
             show_widget,
             hide_widget,

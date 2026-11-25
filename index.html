@@ -30,8 +30,8 @@
       <div class="list-head"><h3 id="focus-question">Which task are you working on?</h3><span id="remaining"></span></div>
       <ul id="tasks" aria-label="Priorities in order"></ul>
     </div>
-    <div class="check-question"><button id="different">Something new</button></div>
-    <div id="task-menu" hidden><button type="button" id="set-deadline">Set deadline</button></div>
+    <div class="check-question"><a id="task-link-open" target="_blank" rel="noopener noreferrer" hidden>Open link ↗</a><button id="different">Something new</button></div>
+    <div id="task-menu" hidden><button type="button" id="edit-task">Edit task, deadline or link</button></div>
   </section>
 </main>
 <dialog id="settings" aria-labelledby="settings-title">
@@ -60,6 +60,7 @@
       <button type="button" id="mic" aria-label="Start dictation" aria-pressed="false" title="Dictate"><span aria-hidden="true" class="mic-glyph"></span></button>
     </div>
     <p id="voice-status" role="status"></p>
+    <label class="composer-link" for="task-link">Link <small>(optional)</small><input id="task-link" type="url" placeholder="https://example.com"></label>
     <div class="composer-actions">
       <label for="deadline"><span class="deadline-label">Deadline <small>(optional)</small></span><input type="datetime-local" id="deadline"></label>
       <button class="primary save" id="save" disabled>Save</button>

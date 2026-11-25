@@ -44,6 +44,25 @@ const voice = get('voice');
 const settings = get('settings');
 let transcript = get('transcript');
 const deadline = get('deadline');
+const taskLink = get('task-link');
+const taskLinkOpen = get('task-link-open');
+
+function webLink(value) {
+  try {
+    const url = new URL(value);
+    if (['http:', 'https:'].includes(url.protocol) && !url.username && !url.password) return url.href;
+  } catch {}
+  return '';
+}
+
+if (desktop) taskLinkOpen.onclick = async event => {
+  event.preventDefault();
+  try {
+    await desktop.invoke('open_task_link', {url: taskLinkOpen.href});
+  } catch (error) {
+    get('announcement').textContent = 'Could not open task link: ' + error;
+  }
+};
 const taskMenu = get('task-menu');
 const speech = window.SpeechRecognition || window.webkitSpeechRecognition;
 const deadlineSoon = 3 * 60 * 60 * 1000;
@@ -80,6 +99,15 @@ function render() {
   const glanceDescription = get('glance-description');
   glanceDescription.querySelector('.task-deadline')?.remove();
   appendDeadline(glanceDescription, focus);
+  const link = webLink(focus?.link);
+  taskLinkOpen.hidden = !link;
+  if (link) {
+    taskLinkOpen.href = link;
+    taskLinkOpen.title = new URL(link).host;
+  } else {
+    taskLinkOpen.removeAttribute('href');
+    taskLinkOpen.removeAttribute('title');
+  }
   get('glance-focus').classList.toggle('tracking', focus?.startedAt != null);
   get('glance-time').title = focus?.startedAt != null ? 'Time tracking is running' : 'Timer paused';
   get('glance-next').replaceChildren(...active.filter(task => task !== focus).slice(0, 2).map(task => {
@@ -468,7 +496,7 @@ function openTaskMenu(event, task, trigger) {
   const y = (event.clientY || anchor.bottom) - widget.top;
   taskMenu.style.left = `${Math.max(6, Math.min(x, widget.width - taskMenu.offsetWidth - 6))}px`;
   taskMenu.style.top = `${Math.max(6, Math.min(y, widget.height - taskMenu.offsetHeight - 6))}px`;
-  get('set-deadline').focus();
+  get('edit-task').focus();
 }
 
 function closeTaskMenu(restoreFocus = false) {
@@ -495,6 +523,8 @@ function openVoice(other, task) {
   transcript = get(other ? 'transcript' : 'bulk-transcript');
   transcript.value = task?.name ?? '';
   deadline.value = deadlineInputValue(task?.deadlineAt);
+  taskLink.value = task?.link ?? '';
+  taskLink.setCustomValidity('');
   transcript.oninput();
   get('mic').disabled = !speech;
   get('voice-status').textContent = speech ? '' : 'Dictation is unavailable in this browser.';
@@ -613,7 +643,7 @@ window.addEventListener(desktop ? 'desktop-blur' : 'blur', () => {
 });
 get('capture').onclick = get('desktop-capture').onclick = () => openVoice(false);
 get('different').onclick = () => openVoice(true);
-get('set-deadline').onclick = () => openVoice(true, menuTask);
+get('edit-task').onclick = () => openVoice(true, menuTask);
 document.addEventListener('pointerdown', event => {
   if (!taskMenu.contains(event.target)) closeTaskMenu();
 });
@@ -667,20 +697,28 @@ voice.onclose = () => {
   resetMic();
   session?.abort();
 };
+taskLink.oninput = () => taskLink.setCustomValidity('');
 get('voice-form').onsubmit = event => {
   event.preventDefault();
   const names = (captureCurrent ? [transcript.value] : transcript.value.split(/\n+/)).map(line => line.trim()).filter(Boolean);
   if (!names.length) return;
+  const link = webLink(taskLink.value.trim());
+  if (taskLink.value.trim() && !link) {
+    taskLink.setCustomValidity('Enter an http or https link without a username or password.');
+    taskLink.reportValidity();
+    return;
+  }
   const deadlineAt = deadline.value ? new Date(deadline.value).getTime() : null;
   if (editingTask) {
     editingTask.name = names[0];
+    editingTask.link = link || null;
     if (deadline.value !== deadlineInputValue(editingTask.deadlineAt)) editingTask.deadlineAt = deadlineAt;
     update();
     voice.close();
     get('announcement').textContent = 'Task updated.';
     return;
   }
-  const added = names.map(name => ({id: crypto.randomUUID(), name, done: false, deadlineAt}));
+  const added = names.map(name => ({id: crypto.randomUUID(), name, done: false, deadlineAt, link: link || null}));
   const current = currentTask();
   tasks.splice(current ? 1 : 0, 0, ...added);
   if (captureCurrent) startTask(added[0]);
