@@ -8,6 +8,7 @@ if (desktop) document.documentElement.classList.add('desktop');
 const get = id => document.getElementById(id);
 const interval = 300000;
 const storageKey = 'next-up-priorities-v1';
+const alwaysOnTopKey = 'next-up-always-on-top';
 let tasks = [];
 let needsOnboarding = true;
 try {
@@ -21,7 +22,8 @@ try {
   }
 } catch {}
 let next = Date.now() + interval;
-let pinned = false;
+let pinned = true;
+try { pinned = localStorage.getItem(alwaysOnTopKey) !== 'false'; } catch {}
 let dragged;
 let recognition;
 let captureCurrent = false;
@@ -377,18 +379,20 @@ function expandFromGlance() {
 function setPinned(value) {
   pinned = value;
   get('pin').setAttribute('aria-pressed', String(value));
-  get('pin').setAttribute('aria-label', value ? 'Unpin reminder' : 'Pin reminder');
-  get('pin').title = value ? 'Turn off Always on Top' : 'Keep Next Up always on top';
-  get('status').textContent = value ? 'PINNED' : 'FOCUS CHECK-IN';
-  native('pin_widget', { pinned: value });
+  return native('pin_widget', { pinned: value });
+}
+
+function collapse() {
+  clearTimeout(hoverExpandTimer);
+  get('widget').classList.remove('hover-expanded');
+  get('expand').setAttribute('aria-pressed', 'false');
+  closeTaskMenu();
+  if (get('widget').contains(document.activeElement)) document.activeElement.blur();
 }
 
 let nativeHideTimer;
 function dismiss() {
-  clearTimeout(hoverExpandTimer);
-  get('widget').classList.remove('hover-expanded');
-  get('expand').setAttribute('aria-pressed', 'false');
-  setPinned(false);
+  collapse();
   get('widget').classList.add('closed');
   get('widget').inert = true;
   if (desktop) nativeHideTimer = setTimeout(() => native('hide_widget'), 380);
@@ -515,7 +519,13 @@ get('expand').onclick = event => {
   button.setAttribute('aria-pressed', String(button.getAttribute('aria-pressed') !== 'true'));
 };
 get('close').onclick = dismiss;
-get('pin').onclick = () => setPinned(!pinned);
+get('pin').onclick = () => {
+  setPinned(!pinned);
+  try { localStorage.setItem(alwaysOnTopKey, String(pinned)); } catch {}
+};
+window.addEventListener(desktop ? 'desktop-blur' : 'blur', () => {
+  if (!voice.open && !onboarding.open) collapse();
+});
 get('capture').onclick = get('desktop-capture').onclick = () => openVoice(false);
 get('different').onclick = () => openVoice(true);
 get('set-deadline').onclick = () => openVoice(true, menuTask);
@@ -628,6 +638,7 @@ if (needsOnboarding) {
 render();
 tick();
 setInterval(tick, 1000);
+const initialPin = setPinned(pinned);
 
 function sizeDesktop() {
   if (!desktop) return;
@@ -648,6 +659,6 @@ if (desktop) {
     show();
     get('announcement').textContent = 'Time for a focus check-in.';
   });
-  sizeDesktop()?.then(() => native('show_widget'));
+  Promise.all([initialPin, sizeDesktop()]).then(() => native('show_widget'));
   if (!onboarding.open) native('schedule_checkin');
 }

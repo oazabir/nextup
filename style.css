@@ -302,14 +302,14 @@ button.task-time { padding: 3px 6px; border-color: transparent; background: tran
 #glance-next li { display: flex; justify-content: space-between; gap: 12px; padding: 1px 0; }
 #glance-next li + li { color: #4c5e86; }
 .glance-preview-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.widget:not(.hover-expanded,:has(#expand[aria-pressed=true], #pin[aria-pressed=true], .task :focus-visible, .task-editor, #task-menu:not([hidden]))) {
+.widget:not(.hover-expanded,:has(#expand[aria-pressed=true], .task :focus-visible, .task-editor, #task-menu:not([hidden]))) {
   border-color: transparent;
   background: linear-gradient(155deg, #ffffffa8, #edf3ff73);
   backdrop-filter: blur(24px) saturate(140%);
   box-shadow: inset 0 1px 1px #ffffffc4, 0 12px 32px #27396d28;
 }
-.widget:not(.hover-expanded,:has(#expand[aria-pressed=true], #pin[aria-pressed=true], .task :focus-visible, .task-editor, #task-menu:not([hidden]))) :is(.widget-top, .widget-body) { display: none; }
-.widget:not(.hover-expanded,:has(#expand[aria-pressed=true], #pin[aria-pressed=true], .task :focus-visible, .task-editor, #task-menu:not([hidden]))) .glance { display: block; animation: reveal .22s var(--ease) both; }
+.widget:not(.hover-expanded,:has(#expand[aria-pressed=true], .task :focus-visible, .task-editor, #task-menu:not([hidden]))) :is(.widget-top, .widget-body) { display: none; }
+.widget:not(.hover-expanded,:has(#expand[aria-pressed=true], .task :focus-visible, .task-editor, #task-menu:not([hidden]))) .glance { display: block; animation: reveal .22s var(--ease) both; }
 .hover-expanded :is(.widget-top, .widget-body) { animation: reveal .22s var(--ease) both; }
 @media (forced-colors: active) { #glance-next, #glance-next li + li { color: CanvasText; } }
 

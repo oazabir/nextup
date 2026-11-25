@@ -119,6 +119,13 @@ fn main() {
         );
     }
     builder
+        .on_window_event(|window, event| {
+            if matches!(event, tauri::WindowEvent::Focused(false)) {
+                if let Some(webview) = window.get_webview_window(window.label()) {
+                    let _ = webview.eval("window.dispatchEvent(new Event('desktop-blur'))");
+                }
+            }
+        })
         .setup(move |app| {
             if has_global_shortcuts {
                 for shortcut in [previous, next, compose] {
