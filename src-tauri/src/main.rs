@@ -15,6 +15,14 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
+mod awake_clock;
+use awake_clock::AwakeClock;
+
+#[tauri::command]
+fn awake_millis(clock: tauri::State<'_, AwakeClock>) -> u64 {
+    clock.millis()
+}
+
 fn place_widget(window: &WebviewWindow) -> tauri::Result<()> {
     if let Some(monitor) = window.current_monitor()?.or(window.primary_monitor()?) {
         let area = monitor.work_area();
@@ -83,7 +91,11 @@ fn main() {
     let compose = Shortcut::new(modifiers, Code::KeyN);
 
     let has_global_shortcuts = !cfg!(target_os = "linux") || std::env::var_os("DISPLAY").is_some();
-    let mut builder = tauri::Builder::default().manage(Arc::new(AtomicU64::new(0)));
+    let clock = AwakeClock::default();
+    clock.start();
+    let mut builder = tauri::Builder::default()
+        .manage(Arc::new(AtomicU64::new(0)))
+        .manage(clock);
     if has_global_shortcuts {
         builder = builder.plugin(
             tauri_plugin_global_shortcut::Builder::new()
@@ -146,6 +158,7 @@ fn main() {
             show_widget,
             hide_widget,
             pin_widget,
+            awake_millis,
             schedule_checkin
         ])
         .run(tauri::generate_context!())

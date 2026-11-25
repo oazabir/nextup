@@ -9,6 +9,7 @@ Next Up is a desktop focus companion for people who jump between tasks and lose 
 - On first launch, enter your next three tasks and optionally set a deadline for each. Next Up starts tracking your first priority when you save.
 - Pin the panel for a continuous reminder or expand it to reorder and complete tasks.
 - Switch tasks with a keyboard shortcut and keep the time already spent on each one.
+- A running task resumes from its last saved total after a restart. The desktop timer excludes time when the computer sleeps and filters brief automatic wake-ups.
 - Type or dictate a new task and optionally give it a deadline. Deadlines are highlighted during the final three hours.
 - Right-click a task in the expanded list and choose **Set deadline** to edit its title or deadline.
 

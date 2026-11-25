@@ -29,6 +29,8 @@ let editingTask;
 let menuTask;
 let menuTrigger;
 let shortcutOrder;
+let clockSample;
+let clockRequestPending = false;
 const voice = get('voice');
 const onboarding = get('onboarding');
 const transcript = get('transcript');
@@ -270,25 +272,50 @@ function currentTask() {
   return tasks.find(task => task.startedAt != null);
 }
 
-function elapsed(task, now) {
-  return (task.trackedMs ?? 0) + (task.startedAt == null ? 0 : Math.max(0, now - task.startedAt));
+function sampleTrackingClock() {
+  const task = currentTask();
+  if (!task) {
+    clockSample = undefined;
+    return;
+  }
+  function checkpoint(millis) {
+    if (currentTask() !== task || !Number.isFinite(millis)) return;
+    const previous = clockSample;
+    clockSample = {task, millis};
+    if (previous?.task !== task) return;
+    const delta = millis - previous.millis;
+    if (delta <= 0 || (!desktop && delta > 2500)) return;
+    task.trackedMs = (task.trackedMs ?? 0) + delta;
+    persist();
+    updateTimes(Date.now());
+  }
+  if (!desktop) {
+    checkpoint(Date.now());
+  } else if (!clockRequestPending) {
+    clockRequestPending = true;
+    native('awake_millis').then(checkpoint).finally(() => {
+      clockRequestPending = false;
+      if (currentTask() !== task) sampleTrackingClock();
+    });
+  }
 }
 
-function stopTask(task, now = Date.now()) {
+function stopTask(task) {
   if (!task) return;
-  task.trackedMs = elapsed(task, now);
+  if (!desktop) sampleTrackingClock();
   delete task.startedAt;
+  clockSample = undefined;
 }
 
 function startTask(task, fromShortcut = false) {
   if (!fromShortcut) shortcutOrder = undefined;
   const previous = currentTask();
   if (previous === task) return;
-  const now = Date.now();
-  stopTask(previous, now);
-  task.startedAt = now;
+  stopTask(previous);
+  task.startedAt = Date.now();
   tasks = [task, ...tasks.filter(item => item !== task)];
   update();
+  sampleTrackingClock();
   get('announcement').textContent = 'Tracking time on ' + task.name + '.';
 }
 
@@ -296,7 +323,7 @@ function updateTimes(now) {
   const focus = currentTask() ?? tasks.find(task => !task.done);
   function writeTime(time, task) {
     if (!time || !task) return;
-    const seconds = Math.floor(elapsed(task, now) / 1000);
+    const seconds = Math.floor((task.trackedMs ?? 0) / 1000);
     const minutes = Math.floor(seconds / 60);
     const stamp = minutes + ':' + String(seconds % 60).padStart(2, '0');
     if (time.textContent !== stamp) time.textContent = stamp;
@@ -372,6 +399,7 @@ function dismiss() {
 
 function tick() {
   const now = Date.now();
+  sampleTrackingClock();
   updateTimes(now);
   if (!desktop && now >= next) {
     show();
