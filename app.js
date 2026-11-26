@@ -675,6 +675,11 @@ function toggleMic() {
 
 get('show').onclick = () => show(true);
 get('glance-focus').onclick = expandFromGlance;
+get('widget').onclick = event => {
+  if (get('expand').getAttribute('aria-pressed') === 'true') return;
+  if (event.target.closest('button, a, input, select, textarea, .task')) return;
+  expandFromGlance();
+};
 let hoverExpandTimer;
 get('widget').onpointerenter = event => {
   if (event.pointerType !== 'mouse') return;
