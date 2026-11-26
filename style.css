@@ -264,7 +264,7 @@ button.task-time { padding: 3px 6px; border-color: transparent; background: tran
   clip-path: polygon(0 0, 33% 0, 33% 100%, 0 100%, 0 0, 67% 0, 100% 0, 100% 100%, 67% 100%, 67% 0);
 }
 .empty { padding: 10px 0; color: var(--muted); }
-.check-question { flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 5px 12px 9px; }
+.check-question { flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 5px 12px 3px; }
 .record { display: flex; gap: 7px; flex-wrap: wrap; }
 #different, #task-link-open {
   background: #18223808;
