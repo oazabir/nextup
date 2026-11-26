@@ -58,6 +58,19 @@
     <div id="shortcut-controls"></div>
     <p id="shortcut-status" role="status"></p>
   </fieldset>
+  <fieldset id="update-settings" hidden>
+    <legend>Software updates</legend>
+    <label>Install updates automatically <input id="automatic-updates" type="checkbox"></label>
+    <button type="button" id="check-update">Check for updates</button>
+    <p id="update-status" role="status"></p>
+    <section id="update-confirmation" aria-labelledby="update-title" hidden>
+      <p id="update-title"></p>
+      <div>
+        <button type="button" id="decline-update">Not now</button>
+        <button type="button" class="primary" id="install-update">Install and restart</button>
+      </div>
+    </section>
+  </fieldset>
 </dialog>
 <dialog id="voice" aria-label="New task">
   <form id="voice-form">

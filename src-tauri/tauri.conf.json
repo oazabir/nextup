@@ -37,5 +37,14 @@
       "icons/icon.ico",
       "icons/icon.icns"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/oazabir/nextup/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDM5MUI3NDhEMzM5REExRjcKUldUM29aMHpqWFFiT1pkR0ZnbEdIRUsvRnl5R0hNWTdOaU1EcnlVTjZZcVhFMUphYVZRQktPVXgK",
+      "requireSignedVersion": true
+    }
   }
 }

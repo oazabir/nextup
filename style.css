@@ -11,6 +11,8 @@
   font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 * { box-sizing: border-box; }
+body { -webkit-user-select: none; user-select: none; }
+input, textarea { -webkit-user-select: text; user-select: text; }
 body { margin: 0; color: var(--ink); background: #e2eafe; }
 button, textarea { font: inherit; }
 button {
@@ -144,6 +146,8 @@ h1 { font-size: clamp(38px, 5vw, 68px); line-height: 1.03; letter-spacing: -.04e
 #edit-task:is(:hover, :focus-visible) { background: var(--accent); color: white; }
 .widget-top { display: flex; justify-content: space-between; align-items: center; }
 .widget-top { padding: 6px 9px 6px 14px; border-bottom: 1px solid var(--line); background: #f0f3fb; }
+.desktop .widget-top { cursor: grab; }
+.desktop .widget-top:active { cursor: grabbing; }
 .checkin { gap: 7px; font-size: 11px; font-weight: 700; letter-spacing: .055em; color: var(--muted); }
 .window-actions { gap: 3px; }
 .icon {
@@ -532,3 +536,16 @@ html:not(.desktop) .desktop-capture { display: none; }
 #shortcut-controls input { width: 145px; max-width: 52%; text-align: center; font: inherit; }
 #shortcut-status { margin: 0; font-size: 12px; color: var(--muted); }
 #shortcut-status:not(:empty) { min-height: 28px; }
+
+#update-settings[hidden], #update-confirmation[hidden] { display: none; }
+#update-status:empty { display: none; }
+#update-settings p { margin: 8px 0; font-size: 12px; }
+#update-confirmation {
+  padding: 8px 10px;
+  margin-top: 8px;
+  border-radius: 10px;
+  background: rgba(110, 137, 218, .13);
+}
+#update-confirmation div { display: flex; gap: 6px; justify-content: flex-end; }
+#update-settings { margin: 10px 0 0; padding: 0; border: 0; }
+#update-settings legend { font-size: 13px; font-weight: 600; margin-bottom: 4px; }

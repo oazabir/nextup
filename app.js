@@ -7,10 +7,11 @@ if (desktop) document.documentElement.classList.add('desktop');
 'use strict';
 const get = id => document.getElementById(id);
 const preferencesKey = 'next-up-reminders';
-const preferences = {minutes: 5, shake: true, focusSwitch: true};
+const preferences = {minutes: 5, shake: true, focusSwitch: true, automaticUpdates: true};
 try {
   const stored = JSON.parse(localStorage.getItem(preferencesKey));
   if ([0, 1, 3, 5, 10, 15, 30, 60].includes(stored?.minutes)) preferences.minutes = stored.minutes;
+  if (typeof stored?.automaticUpdates === 'boolean') preferences.automaticUpdates = stored.automaticUpdates;
   if (typeof stored?.shake === 'boolean') preferences.shake = stored.shake;
   if (typeof stored?.focusSwitch === 'boolean') preferences.focusSwitch = stored.focusSwitch;
 } catch {}
@@ -720,6 +721,109 @@ get('settings-switch').onchange = event => {
   saveReminders();
   syncBrowserPreference();
 };
+if (desktop) {
+  const automatic = get('automatic-updates');
+  const check = get('check-update');
+  const confirmation = get('update-confirmation');
+  const install = get('install-update');
+  const decline = get('decline-update');
+  const status = get('update-status');
+  let available;
+  let deferredVersion;
+  let busy = false;
+  let lastInteraction = Date.now();
+
+  get('update-settings').hidden = false;
+  automatic.checked = preferences.automaticUpdates;
+  automatic.onchange = () => {
+    preferences.automaticUpdates = automatic.checked;
+    saveReminders();
+    if (automatic.checked) void checkForUpdate(false);
+  };
+  for (const event of ['pointerdown', 'keydown']) {
+    document.addEventListener(event, () => { lastInteraction = Date.now(); }, true);
+  }
+
+  function setBusy(value) {
+    busy = value;
+    check.disabled = install.disabled = decline.disabled = value;
+  }
+
+  function canRestartAutomatically() {
+    return preferences.automaticUpdates && !settings.open && !voice.open && !editingTask &&
+      !document.querySelector('.dragging') && Date.now() - lastInteraction >= 15000;
+  }
+
+  async function installUpdate(update, manual) {
+    status.textContent = 'Downloading and verifying update…';
+    await desktop.invoke('download_update', {version: update.version});
+    if (!manual && !canRestartAutomatically()) {
+      status.textContent = '';
+      return;
+    }
+    while (savingTasks) await new Promise(resolve => setTimeout(resolve, 50));
+    await flushTasks();
+    if (!taskStoreReady || pendingTasks) throw new Error('Could not save tasks. Try updating again.');
+    if (!manual && !canRestartAutomatically()) {
+      status.textContent = '';
+      return;
+    }
+    status.textContent = 'Installing update and restarting…';
+    await desktop.invoke('install_update', {version: update.version});
+  }
+
+  async function checkForUpdate(manual) {
+    if (busy || (!manual && !canRestartAutomatically())) return;
+    setBusy(true);
+    confirmation.hidden = true;
+    status.textContent = manual ? 'Checking for updates…' : '';
+    try {
+      const version = await desktop.invoke('check_for_update');
+      available = version ? {version} : undefined;
+      if (!available) {
+        if (manual) status.textContent = 'You’re up to date.';
+      } else if (manual || settings.open) {
+        if (manual || available.version !== deferredVersion) {
+          get('update-title').textContent = 'Next Up ' + available.version + ' is available. Install now and restart?';
+          confirmation.hidden = false;
+        }
+        status.textContent = '';
+      } else if (available.version !== deferredVersion && canRestartAutomatically()) {
+        await installUpdate(available, false);
+      }
+    } catch (error) {
+      if (manual) status.textContent = 'Update check: ' + error;
+      else {
+        status.textContent = '';
+        console.warn('Automatic update:', error);
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  check.onclick = () => checkForUpdate(true);
+  decline.onclick = () => {
+    deferredVersion = available.version;
+    confirmation.hidden = true;
+    status.textContent = 'Installation postponed for this session. You can check again at any time.';
+    check.focus();
+  };
+  install.onclick = async () => {
+    if (busy || !available) return;
+    setBusy(true);
+    try {
+      await installUpdate(available, true);
+    } catch (error) {
+      status.textContent = 'Could not install update: ' + error;
+    } finally {
+      setBusy(false);
+    }
+  };
+  setTimeout(() => checkForUpdate(false), 20000);
+  setInterval(() => checkForUpdate(false), 30 * 60 * 1000);
+}
+
 function openSettings() {
   if (settings.open || voice.open) return;
   settings.showModal();
@@ -921,6 +1025,14 @@ function sizeDesktop() {
   const dialog = settings.open ? settings : voice;
   const height = dialog.open ? Math.max(widget.offsetHeight, Math.max(dialog.offsetHeight, dialog.scrollHeight) + 12) : widget.offsetHeight;
   return native('resize_widget', { height: height + 24 });
+}
+
+if (desktop) {
+  document.querySelector('.widget-top').addEventListener('mousedown', event => {
+    if (event.button !== 0 || event.target.closest('button')) return;
+    event.preventDefault();
+    native('start_widget_drag');
+  });
 }
 
 window.addEventListener('desktop-focus-switch', () => {

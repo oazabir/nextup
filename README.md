@@ -1,6 +1,6 @@
 # Next Up
 
-![Simulated laptop desktop with a curved arrow pointing to Next Up in the bottom-left corner. The callout reads “Your priorities are always visible on your screen.”](docs/images/floating-window.jpg)
+![Simulated Mac desktop with overlapping browser, chat, and terminal windows and a curved arrow pointing to Next Up in the bottom-left corner. The callout reads “Your priorities are always visible on your screen.”](docs/images/floating-window.jpg)
 
 *The translucent Next Up panel keeps the current task, timer, and next two priorities visible over other windows.*
 
@@ -12,8 +12,9 @@
 
 1. **Keep your priorities in sight.** The floating window keeps your current task and next priorities visible above other apps.
 2. **Get a visual reminder every five minutes.** The window flashes by default so you can check whether you’re still working on the task you intended.
-3. **See where your time goes.** Each task tracks its own time and keeps the total when you switch.
+3. **See deadlines at a glance.** Due dates appear under task titles and are highlighted when a deadline is within three hours.
 4. **Switch tasks with a keyboard shortcut.** Press `Ctrl+Alt+[` or `Ctrl+Alt+]` to move between priorities. On Mac, use Option in place of Alt.
+5. **Track how much time you spend on each task.** Next Up keeps each task’s total when you switch away and come back.
 
 Next Up is a desktop focus companion for people who jump between tasks and lose track of what they meant to do next. For people with ADHD and anyone who finds it hard to hold several priorities in mind, the panel provides a visible place to pick up again after an interruption.
 
@@ -65,3 +66,9 @@ The workflow runs without distribution signing or macOS notarization credentials
 While a task is running, Next Up briefly highlights it when you switch windows. The reminder keeps keyboard focus in your current app. Keep Always on Top enabled if you want to see the pulse over other windows. Window detection works on macOS, Windows, and X11 desktops with `xprop` installed. Native Wayland windows are outside the X11 monitor's view.
 
 The entire floating window flashes and shakes every five minutes by default. Open **Settings** from the expanded widget or the tray menu to change the interval, toggle the flash or shake, toggle window-switch highlights, or change Always on Top. With Reduce Motion enabled, the timed reminder uses a steady tint.
+
+### Software updates
+
+[Download Next Up from GitHub Releases](https://github.com/oazabir/nextup/releases/latest). Automatic updates are enabled by default for macOS, Windows, and Linux AppImage installs. Next Up verifies downloaded updates and restarts when you’re idle in the app. In **Settings → Software updates**, you can turn off automatic installation or select **Check for updates** to review an update before installing and restarting. Update Debian installations by downloading the latest `.deb` from GitHub Releases.
+
+GitHub Actions uses the repository’s `TAURI_SIGNING_PRIVATE_KEY` secret to sign the updater packages. A release publishes only after all four target builds succeed and the update manifest is assembled.

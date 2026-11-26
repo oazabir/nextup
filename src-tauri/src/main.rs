@@ -15,6 +15,7 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
+mod app_updates;
 mod awake_clock;
 mod focus_switch;
 mod task_store;
@@ -83,17 +84,35 @@ fn place_widget(window: &WebviewWindow) -> tauri::Result<()> {
 
 #[tauri::command]
 fn resize_widget(window: WebviewWindow, height: u32) -> Result<(), String> {
+    let position = window.outer_position().ok();
+    let previous_size = window.outer_size().ok();
+    let monitor = window.current_monitor().ok().flatten();
+    let height = height.clamp(96, 540);
     window
-        .set_size(LogicalSize::new(420, height.clamp(96, 540)))
+        .set_size(LogicalSize::new(420, height))
         .map_err(|error| error.to_string())?;
-    // Wayland compositors may choose the window position themselves.
-    let _ = place_widget(&window);
+    if let (Some(position), Some(previous_size), Some(monitor)) = (position, previous_size, monitor)
+    {
+        let area = monitor.work_area();
+        let new_height = (f64::from(height) * monitor.scale_factor()).round() as i32;
+        if previous_size.height as i32 != new_height {
+            let bottom = (position.y + previous_size.height as i32)
+                .min(area.position.y + area.size.height as i32);
+            let y = (bottom - new_height).max(area.position.y);
+            // Wayland compositors may ignore explicit positioning.
+            let _ = window.set_position(PhysicalPosition::new(position.x, y));
+        }
+    }
     Ok(())
 }
 
 #[tauri::command]
+fn start_widget_drag(window: WebviewWindow) -> Result<(), String> {
+    window.start_dragging().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 fn show_widget(window: WebviewWindow) -> Result<(), String> {
-    let _ = place_widget(&window);
     window.show().map_err(|error| error.to_string())
 }
 
@@ -194,7 +213,9 @@ fn main() {
     let mut builder = tauri::Builder::default()
         .manage(Arc::new(AtomicU64::new(0)))
         .manage(focus_switch::BrowserPreference::default())
-        .manage(clock);
+        .manage(clock)
+        .manage(app_updates::Updates::default())
+        .plugin(tauri_plugin_updater::Builder::new().build());
     if has_global_shortcuts {
         builder = builder.plugin(tauri_plugin_global_shortcut::Builder::new().build());
     }
@@ -208,6 +229,7 @@ fn main() {
         })
         .setup(move |app| {
             if let Some(window) = app.get_webview_window("main") {
+                let _ = place_widget(&window);
                 focus_switch::start(window);
             }
             let show = MenuItem::with_id(app, "show", "Show Next Up", true, None::<&str>)?;
@@ -242,11 +264,15 @@ fn main() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            app_updates::check_for_update,
+            app_updates::download_update,
+            app_updates::install_update,
             open_task_link,
             task_store::load_tasks,
             task_store::save_tasks,
             set_task_shortcut,
             resize_widget,
+            start_widget_drag,
             show_widget,
             hide_widget,
             pin_widget,
