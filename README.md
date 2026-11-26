@@ -16,6 +16,12 @@
 4. **Switch tasks with a keyboard shortcut.** Press `Ctrl+Alt+[` or `Ctrl+Alt+]` to move between priorities. On Mac, use Option in place of Alt.
 5. **Track how much time you spend on each task.** Next Up keeps each task’s total when you switch away and come back.
 
+## Download
+
+[Download the latest release](https://github.com/oazabir/nextup/releases/latest) for macOS, Windows, or Linux.
+
+## About Next Up
+
 Next Up is a desktop focus companion for people who jump between tasks and lose track of what they meant to do next. For people with ADHD and anyone who finds it hard to hold several priorities in mind, the panel provides a visible place to pick up again after an interruption.
 
 - Choose **Something new** to add a task and start tracking it.
@@ -69,6 +75,6 @@ The entire floating window flashes and shakes every five minutes by default. Ope
 
 ### Software updates
 
-[Download Next Up from GitHub Releases](https://github.com/oazabir/nextup/releases/latest). Automatic updates are enabled by default for macOS, Windows, and Linux AppImage installs. Next Up verifies downloaded updates and restarts when you’re idle in the app. In **Settings → Software updates**, you can turn off automatic installation or select **Check for updates** to review an update before installing and restarting. To update an existing Debian installation, switch to the AppImage.
+Automatic updates are enabled by default for macOS, Windows, and Linux AppImage installs. Next Up verifies downloaded updates and restarts when you’re idle in the app. In **Settings → Software updates**, you can turn off automatic installation or select **Check for updates** to review an update before installing and restarting. To update an existing Debian installation, switch to the AppImage.
 
 GitHub Actions uses the repository’s `TAURI_SIGNING_PRIVATE_KEY` secret to sign the updater packages. A release publishes only after all four target builds succeed and the update manifest is assembled.
