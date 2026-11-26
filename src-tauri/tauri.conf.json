@@ -7,7 +7,8 @@
     "frontendDist": [
       "../index.html",
       "../app.js",
-      "../style.css"
+      "../style.css",
+      "../task-reminder.html"
     ]
   },
   "app": {

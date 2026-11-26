@@ -1035,6 +1035,13 @@ if (desktop) {
   });
 }
 
+window.addEventListener('desktop-window-switch', () => {
+  const task = currentTask();
+  if (preferences.focusSwitch && task) {
+    native('show_task_reminder', {title: task.name});
+  }
+});
+
 window.addEventListener('desktop-focus-switch', () => {
   const task = currentTask();
   if (preferences.focusSwitch && task && !settings.open && !voice.open && !get('widget').classList.contains('closed')) {

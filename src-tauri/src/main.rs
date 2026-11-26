@@ -228,6 +228,9 @@ fn main() {
             }
         })
         .setup(move |app| {
+            if let Err(error) = focus_switch::create_overlay(app) {
+                eprintln!("Could not create task reminder: {error}");
+            }
             if let Some(window) = app.get_webview_window("main") {
                 let _ = place_widget(&window);
                 focus_switch::start(window);
@@ -278,6 +281,8 @@ fn main() {
             pin_widget,
             awake_millis,
             focus_switch::set_work_browser,
+            focus_switch::show_task_reminder,
+            focus_switch::hide_task_reminder,
             schedule_checkin
         ])
         .run(tauri::generate_context!())
