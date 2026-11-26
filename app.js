@@ -7,7 +7,7 @@ if (desktop) document.documentElement.classList.add('desktop');
 'use strict';
 const get = id => document.getElementById(id);
 const preferencesKey = 'next-up-reminders';
-const preferences = {minutes: 5, shake: false, focusSwitch: true};
+const preferences = {minutes: 5, shake: true, focusSwitch: true};
 try {
   const stored = JSON.parse(localStorage.getItem(preferencesKey));
   if ([0, 1, 3, 5, 10, 15, 30, 60].includes(stored?.minutes)) preferences.minutes = stored.minutes;
@@ -75,10 +75,23 @@ function webLink(value) {
 
 if (desktop) taskLinkOpen.onclick = async event => {
   event.preventDefault();
+  if (taskLinkOpen.getAttribute('aria-busy') === 'true') return;
+  const url = taskLinkOpen.href;
+  taskLinkOpen.setAttribute('aria-busy', 'true');
+  taskLinkOpen.setAttribute('aria-disabled', 'true');
+  taskLinkOpen.setAttribute('aria-label', 'Opening link');
+  get('announcement').textContent = 'Opening link.';
+  const feedback = new Promise(resolve => setTimeout(resolve, 300));
   try {
-    await desktop.invoke('open_task_link', {url: taskLinkOpen.href});
+    await desktop.invoke('open_task_link', {url});
+    get('announcement').textContent = 'Link sent to your browser.';
   } catch (error) {
     get('announcement').textContent = 'Could not open task link: ' + error;
+  } finally {
+    await feedback;
+    taskLinkOpen.removeAttribute('aria-busy');
+    taskLinkOpen.removeAttribute('aria-disabled');
+    taskLinkOpen.removeAttribute('aria-label');
   }
 };
 const taskMenu = get('task-menu');

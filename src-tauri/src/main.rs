@@ -26,8 +26,8 @@ fn awake_millis(clock: tauri::State<'_, AwakeClock>) -> u64 {
 }
 
 #[tauri::command]
-fn open_task_link(url: &str) -> Result<(), String> {
-    let url = tauri::Url::parse(url).map_err(|error| error.to_string())?;
+async fn open_task_link(url: String) -> Result<(), String> {
+    let url = tauri::Url::parse(&url).map_err(|error| error.to_string())?;
     if !matches!(url.scheme(), "http" | "https")
         || url.host().is_none()
         || !url.username().is_empty()
@@ -43,11 +43,28 @@ fn open_task_link(url: &str) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     let opener = "explorer.exe";
 
-    std::process::Command::new(opener)
-        .arg(url.as_str())
-        .spawn()
-        .map_err(|error| error.to_string())?;
-    Ok(())
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut command = std::process::Command::new(opener);
+        command.arg(url.as_str());
+
+        #[cfg(target_os = "windows")]
+        {
+            command.spawn().map_err(|error| error.to_string())?;
+            Ok(())
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            let status = command.status().map_err(|error| error.to_string())?;
+            if status.success() {
+                Ok(())
+            } else {
+                Err(format!("The browser launcher returned {status}."))
+            }
+        }
+    })
+    .await
+    .map_err(|error| error.to_string())?
 }
 
 fn place_widget(window: &WebviewWindow) -> tauri::Result<()> {

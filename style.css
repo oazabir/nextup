@@ -497,6 +497,24 @@ html:not(.desktop) .desktop-capture { display: none; }
   font-weight: 600;
   text-decoration: none;
 }
+#task-link-open:not([hidden]) { display: inline-grid; place-items: center; }
+#task-link-open > span { grid-area: 1 / 1; }
+#task-link-open[aria-busy=true] { cursor: progress; }
+#task-link-open[aria-busy=true] .link-label { visibility: hidden; }
+.link-spinner {
+  display: none;
+  box-sizing: border-box;
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--line);
+  border-top-color: currentColor;
+  border-radius: 50%;
+}
+#task-link-open[aria-busy=true] .link-spinner { display: block; animation: link-spin .7s linear infinite; }
+@keyframes link-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  #task-link-open[aria-busy=true] .link-spinner { animation: none; }
+}
 #task-link-open:hover { background: white; }
 #task-link-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
