@@ -24,7 +24,7 @@
 
 Next Up is a desktop focus companion for people who jump between tasks and lose track of what they meant to do next. For people with ADHD and anyone who finds it hard to hold several priorities in mind, the panel provides a visible place to pick up again after an interruption.
 
-- Choose **Something new** to add a task and start tracking it.
+- Choose **New Task** to add a task and start tracking it.
 - Find the panel at the bottom left. Always on Top is enabled by default. Use the pin icon to toggle it. The panel collapses when it loses focus.
 - Switch tasks with a keyboard shortcut and keep the time already spent on each one.
 - A running task resumes from its last saved total after a restart. The desktop timer excludes time when the computer sleeps and filters brief automatic wake-ups.
