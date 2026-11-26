@@ -367,8 +367,10 @@ function updateTimes(now) {
   function writeTime(time, task) {
     if (!time || !task) return;
     const seconds = Math.floor((task.trackedMs ?? 0) / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const stamp = minutes + ':' + String(seconds % 60).padStart(2, '0');
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor(seconds / 60) % 60;
+    const minuteStamp = hours ? `${hours}:${String(minutes).padStart(2, '0')}` : String(minutes);
+    const stamp = `${minuteStamp}:${String(seconds % 60).padStart(2, '0')}`;
     if (time.textContent !== stamp) time.textContent = stamp;
   }
   get('glance-time').hidden = !focus;
