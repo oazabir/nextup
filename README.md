@@ -49,8 +49,8 @@ The same three frontend files can also be served with `python3 -m http.server 87
 Run **Desktop releases** from the repository’s **Actions** tab to build and download installer artifacts. Push a version tag such as `v0.1.0` that matches `src-tauri/tauri.conf.json` to publish the installers to **Releases** after every build succeeds.
 
 - Windows x64 gets an NSIS installer.
-- macOS gets separate disk images for Apple silicon and Intel.
-- Linux x64 gets a Debian package and an AppImage.
+- macOS gets one universal disk image for Apple Silicon and Intel.
+- Linux x64 gets an AppImage.
 
 The workflow runs without distribution signing or macOS notarization credentials.
 
@@ -69,6 +69,6 @@ The entire floating window flashes and shakes every five minutes by default. Ope
 
 ### Software updates
 
-[Download Next Up from GitHub Releases](https://github.com/oazabir/nextup/releases/latest). Automatic updates are enabled by default for macOS, Windows, and Linux AppImage installs. Next Up verifies downloaded updates and restarts when you’re idle in the app. In **Settings → Software updates**, you can turn off automatic installation or select **Check for updates** to review an update before installing and restarting. Update Debian installations by downloading the latest `.deb` from GitHub Releases.
+[Download Next Up from GitHub Releases](https://github.com/oazabir/nextup/releases/latest). Automatic updates are enabled by default for macOS, Windows, and Linux AppImage installs. Next Up verifies downloaded updates and restarts when you’re idle in the app. In **Settings → Software updates**, you can turn off automatic installation or select **Check for updates** to review an update before installing and restarting. To update an existing Debian installation, switch to the AppImage.
 
 GitHub Actions uses the repository’s `TAURI_SIGNING_PRIVATE_KEY` secret to sign the updater packages. A release publishes only after all four target builds succeed and the update manifest is assembled.

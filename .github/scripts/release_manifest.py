@@ -7,10 +7,9 @@ from urllib.parse import quote
 
 
 PLATFORMS = {
-    "windows-x64": ("windows-x86_64", ".exe", ()),
-    "macos-apple-silicon": ("darwin-aarch64", ".app.tar.gz", (".dmg",)),
-    "macos-intel": ("darwin-x86_64", ".app.tar.gz", (".dmg",)),
-    "linux-x64": ("linux-x86_64", ".AppImage", (".deb",)),
+    "windows-x64": (("windows-x86_64",), ".exe", ".exe"),
+    "macos-universal": (("darwin-aarch64", "darwin-x86_64"), ".app.tar.gz", ".dmg"),
+    "linux-x64": (("linux-x86_64",), ".AppImage", ".AppImage"),
 }
 
 
@@ -21,32 +20,46 @@ def required_asset(directory, suffix):
     return matches[0]
 
 
+def signature_for(package):
+    signature = package.with_name(package.name + ".sig")
+    if not signature.is_file() or not signature.read_text().strip():
+        raise SystemExit(f"Missing signature for {package}")
+    return signature
+
+
 def main():
     source, destination = map(Path, sys.argv[1:3])
     repository, tag = sys.argv[3:]
-    destination.mkdir()
+    downloads = destination / "downloads"
+    updater = destination / "updater"
+    downloads.mkdir(parents=True)
+    updater.mkdir()
     platforms = {}
-    for platform, (target, suffix, installers) in PLATFORMS.items():
+    for platform, (targets, update_suffix, installer_suffix) in PLATFORMS.items():
         directory = source / f"next-up-{platform}"
-        package = required_asset(directory, suffix)
-        signature = package.with_name(package.name + ".sig")
-        if not signature.is_file() or not (signed := signature.read_text().strip()):
-            raise SystemExit(f"Missing signature for {package}")
-        name = f"Next-Up-{tag[1:]}-{platform}{suffix}"
-        shutil.copyfile(package, destination / name)
-        shutil.copyfile(signature, destination / (name + ".sig"))
-        for installer in installers:
-            shutil.copyfile(
-                required_asset(directory, installer),
-                destination / f"Next-Up-{tag[1:]}-{platform}{installer}",
-            )
-        platforms[target] = {
-            "signature": signed,
-            "url": f"https://github.com/{repository}/releases/download/{quote(tag)}/{quote(name)}",
+        basename = f"Next-Up-{tag[1:]}-{platform}"
+        installer = required_asset(directory, installer_suffix)
+        installer_name = basename + installer_suffix
+        shutil.copyfile(installer, downloads / installer_name)
+        shutil.copyfile(signature_for(installer), downloads / (installer_name + ".sig"))
+
+        package = required_asset(directory, update_suffix)
+        name = basename + update_suffix
+        update_tag = tag
+        if update_suffix != installer_suffix:
+            shutil.copyfile(package, updater / name)
+            update_tag = f"updater-{tag}"
+        entry = {
+            "signature": signature_for(package).read_text().strip(),
+            "url": f"https://github.com/{repository}/releases/download/{quote(update_tag)}/{quote(name)}",
         }
-    (destination / "latest.json").write_text(
+        for target in targets:
+            platforms[target] = entry
+
+    (downloads / "latest.json").write_text(
         json.dumps({"version": tag[1:], "platforms": platforms}, indent=2) + "\n"
     )
+
 
 
 if __name__ == "__main__":

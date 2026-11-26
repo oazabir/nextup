@@ -21,7 +21,7 @@ pub async fn check_for_update(
     }
     if cfg!(target_os = "linux") && std::env::var_os("APPIMAGE").is_none() {
         return Err(
-            "Download the latest .deb from GitHub Releases to update this installation.".into(),
+            "Download the latest AppImage from GitHub Releases to update this installation.".into(),
         );
     }
 
