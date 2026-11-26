@@ -1,8 +1,8 @@
 # Next Up
 
-![Simulated laptop desktop with the collapsed Next Up window in the bottom-left corner](docs/images/floating-window.jpg)
+![Simulated laptop desktop showing WhatsApp, Claude Code, a browser with many tabs, and Next Up floating over Notes in the bottom-left corner](docs/images/floating-window.jpg)
 
-*Collapsed view with the current task, timer, and the next two priorities.*
+*The translucent Next Up panel keeps the current task, timer, and next two priorities visible over other windows.*
 
 ![Simulated laptop desktop with the expanded Next Up task list in the bottom-left corner](docs/images/full-task-view.jpg)
 
