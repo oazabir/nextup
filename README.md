@@ -8,7 +8,14 @@
 
 *Expanded view with the checklist, deadlines, and per-task timers.*
 
-Next Up is a desktop focus companion for people who jump between tasks and lose track of what they meant to do next. The floating panel keeps your current priority and timer in sight, and a five-minute check-in gives you a chance to return to it or deliberately switch. For people with ADHD and anyone who finds it hard to hold several priorities in mind, the panel provides a visible place to pick up again after an interruption.
+## Top features
+
+1. **Keep your priorities in sight.** The floating window keeps your current task and next priorities visible above other apps.
+2. **Get a visual reminder every five minutes.** The window flashes by default so you can check whether you’re still working on the task you intended.
+3. **See where your time goes.** Each task tracks its own time and keeps the total when you switch.
+4. **Switch tasks with a keyboard shortcut.** Press `Ctrl+Alt+[` or `Ctrl+Alt+]` to move between priorities. On Mac, use Option in place of Alt.
+
+Next Up is a desktop focus companion for people who jump between tasks and lose track of what they meant to do next. For people with ADHD and anyone who finds it hard to hold several priorities in mind, the panel provides a visible place to pick up again after an interruption.
 
 - Choose **Something new** to add a task and start tracking it.
 - Find the panel at the bottom left. Always on Top is enabled by default. Use the pin icon to toggle it. The panel collapses when it loses focus.
