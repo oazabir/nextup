@@ -1,6 +1,6 @@
 # Next Up
 
-![Simulated laptop desktop showing WhatsApp, Claude Code, a browser with many tabs, and Next Up floating over Notes in the bottom-left corner](docs/images/floating-window.jpg)
+![Simulated laptop desktop with a curved arrow pointing to Next Up in the bottom-left corner. The callout reads “Your priorities are always visible on your screen.”](docs/images/floating-window.jpg)
 
 *The translucent Next Up panel keeps the current task, timer, and next two priorities visible over other windows.*
 
