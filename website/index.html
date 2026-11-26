@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Next Up is a floating desktop task list with focus reminders, keyboard shortcuts, and per-task timers.">
+<meta name="theme-color" content="#f4f3ed">
+<title>Next Up — Keep your priorities in sight</title>
+<link rel="stylesheet" href="site.css">
+<script src="demo.js" defer></script>
+</head>
+<body>
+<header class="shell nav">
+  <a class="brand" href="./"><span aria-hidden="true">↗</span> Next Up</a>
+  <nav aria-label="Main navigation"><a href="#demo">Demo</a><a href="#features">Features</a><a href="#shortcuts">Shortcuts</a><a class="nav-download" href="#download">Download ↓</a></nav>
+</header>
+<main class="shell">
+  <section class="hero" aria-labelledby="hero-title">
+    <p class="eyebrow">A floating task list for your desktop</p>
+    <h1 id="hero-title">Keep your priorities<br><em>in sight.</em></h1>
+    <p class="intro">A message, an email, another tab. When your attention moves, Next Up keeps your current task and its timer where you can see them.</p>
+    <div class="hero-actions"><a class="button" href="https://github.com/oazabir/nextup/releases/latest">Download Next Up <span aria-hidden="true">↓</span></a><a href="#demo">Try the demo <span aria-hidden="true">↘</span></a></div>
+    <p class="platforms">macOS · Windows · Linux</p>
+  </section>
+  <section id="demo" aria-labelledby="demo-title">
+    <div class="section-label"><h2 id="demo-title">Try it on a busy desktop</h2><span>Interactive demo</span></div>
+    <div class="desktop" id="desktop">
+      <div class="menubar" aria-hidden="true"><span>◈ &nbsp; Workspace</span><span>Focus &nbsp; ◔ &nbsp; 10:42</span></div>
+      <div class="mock browser" aria-hidden="true">
+        <div class="chrome"><i></i><i></i><i></i><span>Workspace</span></div>
+        <div class="tabs"><span>Project brief</span><span>Research</span><span>Calendar</span><span>+</span></div>
+        <div class="mock-doc"><small>STUDIO / PROJECTS</small><b>Launch plan</b><p>Review the scope and prepare the next milestone.</p><div class="skeleton"></div><div class="skeleton short"></div></div>
+      </div>
+      <div class="mock chat" aria-hidden="true"><div class="chrome"><i></i><i></i><i></i><span>Messages</span></div><div class="chat-body"><b>Project team</b><p>Can you send the draft today?</p><p>I added notes to the brief.</p></div></div>
+      <div class="mock terminal" aria-hidden="true"><div class="chrome"><i></i><i></i><i></i><span>Terminal</span></div><p>~/workspace $ git status<br><span>On branch main</span><br>~/workspace $ ▋</p></div>
+      <div class="widget" id="widget">
+        <div class="current"><strong id="task-title">Draft the project brief</strong><time id="timer">2:14</time></div>
+        <ul id="queue" aria-label="Upcoming tasks"><li><span>Review design notes</span><time>0:42</time></li><li><span>Reply to Sam</span><time>0:12</time></li></ul>
+        <div class="widget-footer"><span aria-hidden="true">⌃⌥ [ &nbsp; ⌃⌥ ]</span><button type="button" id="new-task">New Task</button></div>
+        <form id="composer" hidden><label class="sr-only" for="new-title">Task title</label><input id="new-title" required maxlength="80" placeholder="What are you working on?"><button type="submit">Save</button><button id="cancel" type="button" aria-label="Cancel new task">×</button></form>
+      </div>
+      <div class="window-reminder" id="window-reminder" aria-hidden="true"></div>
+    </div>
+    <div class="demo-controls" aria-label="Demo controls">
+      <button type="button" id="previous">← Previous task</button><button type="button" id="next">Next task →</button><button type="button" id="pause" aria-pressed="false">Pause timer</button><button type="button" id="check-in">Show check-in</button><button type="button" id="switch-window">Switch window</button>
+    </div>
+    <p class="demo-note" id="demo-note" role="status">Switch tasks and watch each timer keep its own total.</p>
+    <noscript><p>Enable JavaScript to try the interactive demo.</p></noscript>
+  </section>
+  <section class="feature-section" id="features" aria-labelledby="features-title">
+    <div class="eyebrow">Features</div><h2 id="features-title">Pick up where you left off.</h2>
+    <div class="features">
+      <article><span class="feature-icon" aria-hidden="true">▱</span><h3>Keep the right task visible</h3><p>The floating panel sits above your apps and shows what you’re working on and what’s next. Expand it to reorder priorities or mark a task done.</p></article>
+      <article><span class="feature-icon" aria-hidden="true">✦</span><h3>Get a gentle check-in</h3><p>By default, the panel flashes every five minutes. A brief title overlay can also remind you what you’re working on when you switch windows.</p></article>
+      <article><span class="feature-icon" aria-hidden="true">◷</span><h3>See where your time went</h3><p>Each task keeps its own elapsed time. Switch priorities with a shortcut and the previous timer pauses as the new one starts.</p></article>
+      <article><span class="feature-icon" aria-hidden="true">◇</span><h3>Keep deadlines close</h3><p>Add a due date and time to any task. The deadline appears below its title and becomes more prominent during the final three hours.</p></article>
+    </div>
+    <figure><img src="images/full-task-view.jpg" alt="Expanded Next Up checklist floating in the bottom-left corner of a desktop" loading="lazy"><figcaption>The expanded task list keeps deadlines, timers, and task controls in one place.</figcaption></figure>
+  </section>
+  <section class="shortcuts" id="shortcuts" aria-labelledby="shortcuts-title">
+    <div><p class="eyebrow">Keyboard shortcuts</p><h2 id="shortcuts-title">Switch without reaching for the mouse.</h2><p>Use <kbd>Option</kbd> on macOS and <kbd>Alt</kbd> on Windows or Linux. Customize shortcuts in Settings.</p></div>
+    <dl><div><dt>Previous task</dt><dd><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>[</kbd></dd></div><div><dt>Next task</dt><dd><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>]</kbd></dd></div><div><dt>New task</dt><dd><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>N</kbd></dd></div><div><dt>Pause or resume</dt><dd><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Space</kbd></dd></div></dl>
+  </section>
+  <section class="download" id="download" aria-labelledby="download-title"><h2 id="download-title">Keep your next task close.</h2><p>For anyone who loses their place after an interruption, including people with ADHD.</p><a class="button" href="https://github.com/oazabir/nextup/releases/latest">Download Next Up ↓</a><p class="platforms">macOS · Windows · Linux</p></section>
+</main>
+<footer class="shell footer"><a class="brand" href="./"><span aria-hidden="true">↗</span> Next Up</a><a href="https://github.com/oazabir/nextup">View on GitHub ↗</a></footer>
+</body>
+</html>

@@ -18,6 +18,8 @@
 
 ## Download
 
+[See Next Up in action](https://oazabir.github.io/nextup/) with the interactive desktop demo.
+
 [Download the latest release](https://github.com/oazabir/nextup/releases/latest) for macOS, Windows, or Linux.
 
 ## About Next Up
