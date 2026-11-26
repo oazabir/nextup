@@ -83,24 +83,35 @@ fn place_widget(window: &WebviewWindow) -> tauri::Result<()> {
 }
 
 #[tauri::command]
-fn resize_widget(window: WebviewWindow, height: u32) -> Result<(), String> {
+fn resize_widget(window: WebviewWindow, width: u32, height: u32) -> Result<(), String> {
     let position = window.outer_position().ok();
     let previous_size = window.outer_size().ok();
     let monitor = window.current_monitor().ok().flatten();
-    let height = height.clamp(96, 540);
+    let width = width.clamp(336, 420);
+    let height = height.clamp(76, 540);
+    if let Ok(size) = window.inner_size() {
+        if let Ok(scale) = window.scale_factor() {
+            if size == LogicalSize::new(width, height).to_physical::<u32>(scale) {
+                return Ok(());
+            }
+        }
+    }
     window
-        .set_size(LogicalSize::new(420, height))
+        .set_size(LogicalSize::new(width, height))
         .map_err(|error| error.to_string())?;
     if let (Some(position), Some(previous_size), Some(monitor)) = (position, previous_size, monitor)
     {
         let area = monitor.work_area();
         let new_height = (f64::from(height) * monitor.scale_factor()).round() as i32;
-        if previous_size.height as i32 != new_height {
+        let new_width = (f64::from(width) * monitor.scale_factor()).round() as i32;
+        if previous_size.height as i32 != new_height || previous_size.width as i32 != new_width {
             let bottom = (position.y + previous_size.height as i32)
                 .min(area.position.y + area.size.height as i32);
             let y = (bottom - new_height).max(area.position.y);
             // Wayland compositors may ignore explicit positioning.
-            let _ = window.set_position(PhysicalPosition::new(position.x, y));
+            let right = area.position.x + area.size.width as i32;
+            let x = position.x.min(right - new_width).max(area.position.x);
+            let _ = window.set_position(PhysicalPosition::new(x, y));
         }
     }
     Ok(())

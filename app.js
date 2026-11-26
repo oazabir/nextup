@@ -7,9 +7,11 @@ if (desktop) document.documentElement.classList.add('desktop');
 'use strict';
 const get = id => document.getElementById(id);
 const preferencesKey = 'next-up-reminders';
-const preferences = {minutes: 5, shake: true, focusSwitch: true, automaticUpdates: true};
+const appSizes = {compact: 0.8, small: 0.9, standard: 1};
+const preferences = {minutes: 5, shake: true, focusSwitch: true, automaticUpdates: true, appSize: 'compact'};
 try {
   const stored = JSON.parse(localStorage.getItem(preferencesKey));
+  if (Object.hasOwn(appSizes, stored?.appSize)) preferences.appSize = stored.appSize;
   if ([0, 1, 3, 5, 10, 15, 30, 60].includes(stored?.minutes)) preferences.minutes = stored.minutes;
   if (typeof stored?.automaticUpdates === 'boolean') preferences.automaticUpdates = stored.automaticUpdates;
   if (typeof stored?.shake === 'boolean') preferences.shake = stored.shake;
@@ -585,10 +587,11 @@ function openTaskMenu(event, task, trigger) {
   taskMenu.hidden = false;
   const widget = get('widget').getBoundingClientRect();
   const anchor = trigger.getBoundingClientRect();
-  const x = (event.clientX || anchor.left) - widget.left;
-  const y = (event.clientY || anchor.bottom) - widget.top;
-  taskMenu.style.left = `${Math.max(6, Math.min(x, widget.width - taskMenu.offsetWidth - 6))}px`;
-  taskMenu.style.top = `${Math.max(6, Math.min(y, widget.height - taskMenu.offsetHeight - 6))}px`;
+  const scale = appSizes[preferences.appSize];
+  const x = ((event.clientX || anchor.left) - widget.left) / scale;
+  const y = ((event.clientY || anchor.bottom) - widget.top) / scale;
+  taskMenu.style.left = `${Math.max(6, Math.min(x, widget.width / scale - taskMenu.offsetWidth - 6))}px`;
+  taskMenu.style.top = `${Math.max(6, Math.min(y, widget.height / scale - taskMenu.offsetHeight - 6))}px`;
   get('edit-task').focus();
 }
 
@@ -698,6 +701,17 @@ get('settings-switch').checked = preferences.focusSwitch;
 function saveReminders() {
   try { localStorage.setItem(preferencesKey, JSON.stringify(preferences)); } catch {}
 }
+function applyAppSize() {
+  get('app-size').value = preferences.appSize;
+  document.documentElement.style.setProperty('--app-scale', appSizes[preferences.appSize]);
+}
+applyAppSize();
+get('app-size').onchange = event => {
+  preferences.appSize = event.target.value;
+  applyAppSize();
+  saveReminders();
+  sizeDesktop();
+};
 function scheduleCheckIn() {
   next = Date.now() + interval();
   get('settings-shake').disabled = !preferences.minutes;
@@ -1023,10 +1037,14 @@ get('voice-form').onsubmit = event => {
 
 function sizeDesktop() {
   if (!desktop) return;
+  const scale = appSizes[preferences.appSize];
   const widget = get('widget');
   const dialog = settings.open ? settings : voice;
   const height = dialog.open ? Math.max(widget.offsetHeight, Math.max(dialog.offsetHeight, dialog.scrollHeight) + 12) : widget.offsetHeight;
-  return native('resize_widget', { height: height + 24 });
+  return native('resize_widget', {
+    width: Math.round(420 * scale),
+    height: Math.ceil((height + 24) * scale),
+  });
 }
 
 if (desktop) {
