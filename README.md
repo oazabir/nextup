@@ -1,8 +1,12 @@
 # Next Up
 
-![Collapsed floating window showing the active task, deadline, timer, and next two priorities](docs/images/floating-window.jpg)
+![Simulated laptop desktop with the collapsed Next Up window in the bottom-left corner](docs/images/floating-window.jpg)
 
-![Expanded task list showing the checklist, deadlines, and play and pause controls](docs/images/full-task-view.jpg)
+*Collapsed view with the current task, timer, and the next two priorities.*
+
+![Simulated laptop desktop with the expanded Next Up task list in the bottom-left corner](docs/images/full-task-view.jpg)
+
+*Expanded view with the checklist, deadlines, and per-task timers.*
 
 Next Up is a desktop focus companion for people who jump between tasks and lose track of what they meant to do next. The floating panel keeps your current priority and timer in sight, and a five-minute check-in gives you a chance to return to it or deliberately switch. For people with ADHD and anyone who finds it hard to hold several priorities in mind, the panel provides a visible place to pick up again after an interruption.
 
@@ -31,6 +35,16 @@ cargo tauri build
 ```
 
 The same three frontend files can also be served with `python3 -m http.server 8765` for browser preview. Desktop and browser have separate local task stores.
+
+## GitHub releases
+
+Run **Desktop releases** from the repository’s **Actions** tab to build and download installer artifacts. Push a version tag such as `v0.1.0` that matches `src-tauri/tauri.conf.json` to publish the installers to **Releases** after every build succeeds.
+
+- Windows x64 gets an NSIS installer.
+- macOS gets separate disk images for Apple silicon and Intel.
+- Linux x64 gets a Debian package and an AppImage.
+
+The workflow runs without distribution signing or macOS notarization credentials.
 
 ## Platform behavior
 
