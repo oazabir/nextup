@@ -262,15 +262,19 @@ button.task-time { padding: 3px 6px; border-color: transparent; background: tran
 .empty { padding: 10px 0; color: var(--muted); }
 .check-question { flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 5px 12px 9px; }
 .record { display: flex; gap: 7px; flex-wrap: wrap; }
-#different {
-  background: linear-gradient(155deg, #ffffffc9, #e7efffa6);
-  border-color: #fff;
-  box-shadow: inset 0 1px 0 #fff, 0 2px 6px #27396d21;
-  color: #233e7b;
+#different, #task-link-open {
+  background: #18223808;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--ink);
   font-size: 12px;
-  padding: 6px 12px;
+  font-weight: 600;
+  line-height: 1.45;
+  padding: 5px 9px;
+  transition: background-color .18s;
 }
-#different:hover { background: #f3f7ff; border-color: #b0c3ef; color: var(--accent); }
+#different { background: #1822380d; }
+#different:hover:not(:disabled), #task-link-open:hover { background: #18223816; }
 .glance { display: none; padding: 10px 12px 0; }
 .glance-focus {
   display: flex;
@@ -488,13 +492,6 @@ html:not(.desktop) .desktop-capture { display: none; }
 
 #task-link-open {
   margin-right: auto;
-  padding: 4px 8px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: #ffffff80;
-  color: var(--accent);
-  font-size: 12px;
-  font-weight: 600;
   text-decoration: none;
 }
 #task-link-open:not([hidden]) { display: inline-grid; place-items: center; }
@@ -515,7 +512,6 @@ html:not(.desktop) .desktop-capture { display: none; }
 @media (prefers-reduced-motion: reduce) {
   #task-link-open[aria-busy=true] .link-spinner { animation: none; }
 }
-#task-link-open:hover { background: white; }
 #task-link-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 #shortcut-guide {
